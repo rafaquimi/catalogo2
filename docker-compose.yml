@@ -2,14 +2,27 @@ services:
   catalogo:
     build:
       context: ./web
-    ports:
-      - "3000:3000"
-    environment:
-      DATABASE_URL: "file:/data/catalogo.db"
-      NEXTAUTH_SECRET: "cambia-esto-en-produccion"
-      NEXTAUTH_URL: "http://localhost:3000"
+    env_file:
+      - ./.env
     volumes:
       - ./data:/data
       - ./uploads:/app/public/uploads
     restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - catalogo
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
 

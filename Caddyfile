@@ -1,0 +1,11 @@
+{$PUBLIC_URL} {
+  encode zstd gzip
+
+  @uploads path /uploads/*
+  handle @uploads {
+    reverse_proxy catalogo:3000
+  }
+
+  reverse_proxy catalogo:3000
+}
+

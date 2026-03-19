@@ -24,15 +24,17 @@ Abre `http://localhost:3000`.
 
 ## Despliegue en servidor (Docker)
 
-Requisitos: Docker Desktop instalado.
+Requisitos: Docker instalado (en un VPS/servidor o en tu PC).
 
 En la raíz del proyecto:
 
 ```bash
+cp .env.example .env
+# edita .env y ajusta PUBLIC_URL / NEXTAUTH_SECRET / NEXTAUTH_URL
 docker compose up -d --build
 ```
 
-Abre `http://TU_SERVIDOR:3000`.
+Abre `https://TU_DOMINIO` (si configuras dominio) o `http://IP_DEL_SERVIDOR` (Caddy expone 80/443).
 
 Persistencia:
 - **BD**: carpeta `./data` (montada en `/data`).
@@ -40,6 +42,6 @@ Persistencia:
 
 ### Importante (producción)
 
-- Cambia `NEXTAUTH_SECRET` en `docker-compose.yml`.
-- Ajusta `NEXTAUTH_URL` a tu dominio (por ejemplo `https://catalogo.midominio.com`).
+- Cambia `NEXTAUTH_SECRET` en `.env`.
+- Ajusta `PUBLIC_URL`/`NEXTAUTH_URL` a tu dominio (por ejemplo `https://catalogo.midominio.com`).
 

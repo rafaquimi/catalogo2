@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import path from "path";
-import { mkdir, writeFile } from "fs/promises";
+import { r2, R2_BUCKET, R2_PUBLIC_URL } from "@/lib/r2";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
+import sharp from "sharp";
 
 const createPartSchema = z.object({
   description: z.string().min(1),
@@ -17,13 +18,6 @@ const createPartSchema = z.object({
     .transform((v) => v.replace(",", "."))
     .pipe(z.coerce.number().nonnegative()),
 });
-
-function extFromName(name: string) {
-  const ext = path.extname(name).toLowerCase();
-  if (ext === ".jpg" || ext === ".jpeg" || ext === ".png" || ext === ".webp")
-    return ext;
-  return ".jpg";
-}
 
 export async function createPart(formData: FormData) {
   const raw = {
@@ -50,16 +44,30 @@ export async function createPart(formData: FormData) {
   });
 
   if (files.length > 0) {
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadDir, { recursive: true });
-
     const imagesData: { url: string; partId: string }[] = [];
+
     for (const file of files) {
-      const buf = Buffer.from(await file.arrayBuffer());
-      const filename = `${crypto.randomUUID()}${extFromName(file.name)}`;
-      const diskPath = path.join(uploadDir, filename);
-      await writeFile(diskPath, buf);
-      imagesData.push({ url: `/uploads/${filename}`, partId: part.id });
+      const inputBuf = Buffer.from(await file.arrayBuffer());
+
+      // Convertir a WebP: auto-rotar por EXIF, redimensionar a 1200px máximo, calidad 82
+      const webpBuf = await sharp(inputBuf)
+        .rotate()
+        .resize({ width: 1200, withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toBuffer();
+
+      const key = `uploads/${crypto.randomUUID()}.webp`;
+
+      await r2.send(
+        new PutObjectCommand({
+          Bucket: R2_BUCKET,
+          Key: key,
+          Body: webpBuf,
+          ContentType: "image/webp",
+        })
+      );
+
+      imagesData.push({ url: `${R2_PUBLIC_URL}/${key}`, partId: part.id });
     }
 
     await prisma.partImage.createMany({ data: imagesData });
@@ -68,4 +76,3 @@ export async function createPart(formData: FormData) {
   revalidatePath("/catalogo");
   redirect(`/catalogo/${part.id}`);
 }
-
