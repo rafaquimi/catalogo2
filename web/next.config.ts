@@ -8,7 +8,6 @@ try {
 } catch {}
 
 const nextConfig: NextConfig = {
-  output: "standalone",
   serverExternalPackages: ["sharp"],
   images: {
     remotePatterns: [
