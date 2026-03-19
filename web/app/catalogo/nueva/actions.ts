@@ -15,8 +15,14 @@ const createPartSchema = z.object({
   price: z
     .string()
     .min(1)
-    .transform((v) => v.replace(",", "."))
-    .pipe(z.coerce.number().nonnegative()),
+    .transform((v, ctx) => {
+      const n = parseFloat(v.replace(",", "."));
+      if (isNaN(n) || n < 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Precio inválido" });
+        return z.NEVER;
+      }
+      return n;
+    }),
 });
 
 export async function createPart(formData: FormData) {
