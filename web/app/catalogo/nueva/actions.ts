@@ -33,7 +33,7 @@ export async function createPart(formData: FormData) {
   };
 
   const parsed = createPartSchema.safeParse(raw);
-  if (!parsed.success) return { ok: false as const, error: "Datos inválidos." };
+  if (!parsed.success) throw new Error("Datos inválidos.");
 
   const files = formData
     .getAll("images")
