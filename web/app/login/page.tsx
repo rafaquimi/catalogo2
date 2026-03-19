@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { LoginForm } from "./LoginForm";
 
@@ -20,7 +21,9 @@ export default async function LoginPage() {
 
           <div className="mt-6">
             {hasUsers ? (
-              <LoginForm />
+              <Suspense fallback={<div className="h-40 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-900" />}>
+                <LoginForm />
+              </Suspense>
             ) : (
               <div className="space-y-4">
                 <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
