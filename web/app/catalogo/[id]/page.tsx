@@ -48,7 +48,7 @@ export default async function PiezaDetallePage({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {part.images.map((img) => (
+          {part.images.map((img: { id: string; url: string }) => (
             <a
               key={img.id}
               href={img.url}
