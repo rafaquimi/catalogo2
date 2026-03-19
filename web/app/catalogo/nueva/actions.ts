@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { r2, R2_BUCKET, R2_PUBLIC_URL } from "@/lib/r2";
+import { getR2Client, getR2Bucket, getR2PublicUrl } from "@/lib/r2";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
 import sharp from "sharp";
@@ -64,16 +64,16 @@ export async function createPart(formData: FormData) {
 
       const key = `uploads/${crypto.randomUUID()}.webp`;
 
-      await r2.send(
+      await getR2Client().send(
         new PutObjectCommand({
-          Bucket: R2_BUCKET,
+          Bucket: getR2Bucket(),
           Key: key,
           Body: webpBuf,
           ContentType: "image/webp",
         })
       );
 
-      imagesData.push({ url: `${R2_PUBLIC_URL}/${key}`, partId: part.id });
+      imagesData.push({ url: `${getR2PublicUrl()}/${key}`, partId: part.id });
     }
 
     await prisma.partImage.createMany({ data: imagesData });
