@@ -13,9 +13,9 @@ function formatPrice(priceCents: number) {
 export default async function PiezaDetallePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { id } = params;
+  const { id } = await params;
 
   const part = await prisma.part.findUnique({
     where: { id },

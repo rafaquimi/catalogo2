@@ -12,9 +12,9 @@ function formatPrice(priceCents: number) {
 export default async function CatalogoPage({
   searchParams,
 }: {
-  searchParams: { familia?: string };
+  searchParams: Promise<{ familia?: string }>;
 }) {
-  const { familia } = searchParams;
+  const { familia } = await searchParams;
 
   const families = await prisma.family.findMany({
     orderBy: { name: "asc" },
