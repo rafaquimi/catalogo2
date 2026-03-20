@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { ImageViewer } from "./ImageViewer";
 
 function formatPrice(priceCents: number) {
   return new Intl.NumberFormat("es-ES", {
@@ -47,29 +47,8 @@ export default async function PiezaDetallePage({
           Esta pieza no tiene imágenes todavía.
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {part.images.map((img: { id: string; url: string }) => (
-            <a
-              key={img.id}
-              href={img.url}
-              target="_blank"
-              rel="noreferrer"
-              className="group overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm hover:shadow-md dark:border-white/10 dark:bg-zinc-950"
-            >
-              <div className="relative aspect-[4/3] w-full bg-zinc-100 dark:bg-zinc-900">
-                <Image
-                  src={img.url}
-                  alt={part.description}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                  sizes="(max-width: 1024px) 50vw, 33vw"
-                />
-              </div>
-            </a>
-          ))}
-        </div>
+        <ImageViewer images={part.images} alt={part.description} />
       )}
     </div>
   );
 }
-
