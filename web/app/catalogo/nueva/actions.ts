@@ -55,28 +55,35 @@ export async function createPart(formData: FormData) {
     for (const file of files) {
       const inputBuf = Buffer.from(await file.arrayBuffer());
 
-      let webpBuf: Buffer;
+      let uploadBuf: Buffer;
+      let contentType: string;
+      let ext: string;
+
       try {
-        // Convertir a WebP: auto-rotar por EXIF, redimensionar a 1200px máximo, calidad 82
-        webpBuf = await sharp(inputBuf)
+        // Convertir a WebP: auto-rotar por EXIF (importante en fotos de iPhone), máx 1200px, calidad 82
+        uploadBuf = await sharp(inputBuf)
           .rotate()
           .resize({ width: 1200, withoutEnlargement: true })
           .webp({ quality: 82 })
           .toBuffer();
+        contentType = "image/webp";
+        ext = "webp";
       } catch {
-        // Si sharp falla, subir la imagen original sin convertir
-        webpBuf = inputBuf;
+        // Fallback: subir imagen original (puede ser HEIC, JPEG, PNG...)
+        uploadBuf = inputBuf;
+        contentType = file.type || "image/jpeg";
+        ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
       }
 
-      const key = `uploads/${crypto.randomUUID()}.webp`;
+      const key = `uploads/${crypto.randomUUID()}.${ext}`;
 
       try {
         await getR2Client().send(
           new PutObjectCommand({
             Bucket: getR2Bucket(),
             Key: key,
-            Body: webpBuf,
-            ContentType: "image/webp",
+            Body: uploadBuf,
+            ContentType: contentType,
           })
         );
       } catch (r2err) {

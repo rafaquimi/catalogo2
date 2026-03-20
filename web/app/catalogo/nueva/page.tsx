@@ -76,13 +76,12 @@ export default async function NuevaPiezaPage() {
               <input
                 name="images"
                 type="file"
-                accept="image/*"
-                capture="environment"
+                accept="image/*,image/heic,image/heif"
                 multiple
                 className="block w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm dark:border-white/10 dark:bg-zinc-950"
               />
               <p className="text-xs text-zinc-500">
-                En iPhone/Android debería permitir cámara o galería.
+                Puedes seleccionar varias fotos a la vez. En móvil te preguntará si usar cámara o galería.
               </p>
             </div>
           </div>

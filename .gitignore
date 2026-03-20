@@ -5,3 +5,5 @@ env
 web/.env
 web/dev.db
 catalogo-taller/
+
+.vercel
