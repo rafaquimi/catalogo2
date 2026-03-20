@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { CatalogCard } from "./CatalogCard";
 
 function formatPrice(priceCents: number) {
   return new Intl.NumberFormat("es-ES", {
@@ -68,37 +68,16 @@ export default async function CatalogoPage({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {parts.map((p) => {
-            const cover = p.images[0]?.url ?? null;
-            return (
-              <Link
-                key={p.id}
-                href={`/catalogo/${p.id}`}
-                className="group overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm hover:shadow-md dark:border-white/10 dark:bg-zinc-950"
-              >
-                <div className="relative aspect-[4/3] w-full bg-zinc-100 dark:bg-zinc-900">
-                  {cover ? (
-                    <Image
-                      src={cover}
-                      alt={p.description}
-                      fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                      sizes="(max-width: 1024px) 50vw, 33vw"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-xs text-zinc-500">
-                      Sin imagen
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-1 p-4">
-                  <div className="text-xs text-zinc-500">{p.family.name}</div>
-                  <div className="text-sm font-medium">{p.description}</div>
-                  <div className="text-sm">{formatPrice(p.priceCents)}</div>
-                </div>
-              </Link>
-            );
-          })}
+          {parts.map((p) => (
+            <CatalogCard
+              key={p.id}
+              id={p.id}
+              description={p.description}
+              family={p.family.name}
+              price={formatPrice(p.priceCents)}
+              images={p.images.map((img) => ({ id: img.id, url: img.url }))}
+            />
+          ))}
         </div>
       )}
     </div>
