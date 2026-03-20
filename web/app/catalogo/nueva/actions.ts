@@ -55,12 +55,18 @@ export async function createPart(formData: FormData) {
     for (const file of files) {
       const inputBuf = Buffer.from(await file.arrayBuffer());
 
-      // Convertir a WebP: auto-rotar por EXIF, redimensionar a 1200px máximo, calidad 82
-      const webpBuf = await sharp(inputBuf)
-        .rotate()
-        .resize({ width: 1200, withoutEnlargement: true })
-        .webp({ quality: 82 })
-        .toBuffer();
+      let webpBuf: Buffer;
+      try {
+        // Convertir a WebP: auto-rotar por EXIF, redimensionar a 1200px máximo, calidad 82
+        webpBuf = await sharp(inputBuf)
+          .rotate()
+          .resize({ width: 1200, withoutEnlargement: true })
+          .webp({ quality: 82 })
+          .toBuffer();
+      } catch {
+        // Si sharp falla, subir la imagen original sin convertir
+        webpBuf = inputBuf;
+      }
 
       const key = `uploads/${crypto.randomUUID()}.webp`;
 
