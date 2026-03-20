@@ -70,14 +70,19 @@ export async function createPart(formData: FormData) {
 
       const key = `uploads/${crypto.randomUUID()}.webp`;
 
-      await getR2Client().send(
-        new PutObjectCommand({
-          Bucket: getR2Bucket(),
-          Key: key,
-          Body: webpBuf,
-          ContentType: "image/webp",
-        })
-      );
+      try {
+        await getR2Client().send(
+          new PutObjectCommand({
+            Bucket: getR2Bucket(),
+            Key: key,
+            Body: webpBuf,
+            ContentType: "image/webp",
+          })
+        );
+      } catch (r2err) {
+        console.error("[R2 Upload Error]", r2err);
+        throw new Error(`Error subiendo imagen a R2: ${r2err instanceof Error ? r2err.message : String(r2err)}`);
+      }
 
       imagesData.push({ url: `${getR2PublicUrl()}/${key}`, partId: part.id });
     }
