@@ -9,6 +9,11 @@ try {
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["sharp"],
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "20mb",
+    },
+  },
   images: {
     remotePatterns: [
       {
