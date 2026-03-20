@@ -34,12 +34,20 @@ export default async function PiezaDetallePage({
           </h1>
           <div className="text-lg">{formatPrice(part.priceCents)}</div>
         </div>
-        <Link
-          href="/catalogo"
-          className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm hover:bg-zinc-50 dark:border-white/10 dark:bg-zinc-950 dark:hover:bg-zinc-900"
-        >
-          Volver
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href={`/catalogo/${part.id}/editar`}
+            className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm hover:bg-zinc-50 dark:border-white/10 dark:bg-zinc-950 dark:hover:bg-zinc-900"
+          >
+            Editar
+          </Link>
+          <Link
+            href="/catalogo"
+            className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm hover:bg-zinc-50 dark:border-white/10 dark:bg-zinc-950 dark:hover:bg-zinc-900"
+          >
+            Volver
+          </Link>
+        </div>
       </div>
 
       {part.images.length === 0 ? (
