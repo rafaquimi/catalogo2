@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { createPart } from "./actions";
 
 interface Props {
@@ -14,7 +14,6 @@ interface ImageEntry {
 }
 
 export function NuevaPiezaForm({ families }: Props) {
-  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [images, setImages] = useState<ImageEntry[]>([]);
   const [isPending, startTransition] = useTransition();
@@ -46,8 +45,8 @@ export function NuevaPiezaForm({ families }: Props) {
     startTransition(async () => {
       try {
         await createPart(formData);
-        router.refresh();
       } catch (err) {
+        if (isRedirectError(err)) throw err; // dejar que Next.js gestione el redirect
         setError(err instanceof Error ? err.message : "Error al guardar la pieza.");
       }
     });
