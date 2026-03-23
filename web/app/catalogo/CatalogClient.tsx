@@ -46,13 +46,16 @@ export function CatalogClient({ parts, families }: Props) {
     return result;
   }, [parts, query, familyId, sort]);
 
+  const inputClass =
+    "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-3 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900";
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Barra de filtros */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         {/* Búsqueda */}
         <div className="relative flex-1">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
             </svg>
@@ -62,7 +65,7 @@ export function CatalogClient({ parts, families }: Props) {
             placeholder="Buscar pieza…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-xl border border-black/10 bg-white py-2.5 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-black/10 dark:border-white/10 dark:bg-zinc-950"
+            className={`${inputClass} pl-9`}
           />
         </div>
 
@@ -70,7 +73,7 @@ export function CatalogClient({ parts, families }: Props) {
         <select
           value={familyId}
           onChange={(e) => setFamilyId(e.target.value)}
-          className="rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-black/10 dark:border-white/10 dark:bg-zinc-950 sm:w-48"
+          className={`${inputClass} sm:w-52`}
         >
           <option value="all">Todas las familias</option>
           {families.map((f) => (
@@ -84,7 +87,7 @@ export function CatalogClient({ parts, families }: Props) {
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as SortOrder)}
-          className="rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-black/10 dark:border-white/10 dark:bg-zinc-950 sm:w-48"
+          className={`${inputClass} sm:w-52`}
         >
           <option value="none">Ordenar por…</option>
           <option value="asc">Precio: menor a mayor</option>
@@ -94,15 +97,15 @@ export function CatalogClient({ parts, families }: Props) {
 
       {/* Resultados */}
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-black/10 bg-white p-6 text-sm text-zinc-600 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-400">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900">
           {parts.length === 0
             ? "No hay piezas todavía."
             : "No hay resultados para esa búsqueda."}
         </div>
       ) : (
         <>
-          <p className="text-xs text-zinc-400">
-            {filtered.length} {filtered.length === 1 ? "pieza" : "piezas"}
+          <p className="text-xs text-slate-400">
+            {filtered.length} {filtered.length === 1 ? "pieza encontrada" : "piezas encontradas"}
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((p) => (

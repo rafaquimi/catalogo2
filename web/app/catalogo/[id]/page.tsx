@@ -26,32 +26,40 @@ export default async function PiezaDetallePage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <div className="text-xs text-zinc-500">{part.family.name}</div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {part.description}
-          </h1>
-          <div className="text-lg">{formatPrice(part.priceCents)}</div>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href={`/catalogo/${part.id}/editar`}
-            className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm hover:bg-zinc-50 dark:border-white/10 dark:bg-zinc-950 dark:hover:bg-zinc-900"
-          >
-            Editar
-          </Link>
-          <Link
-            href="/catalogo"
-            className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm hover:bg-zinc-50 dark:border-white/10 dark:bg-zinc-950 dark:hover:bg-zinc-900"
-          >
-            Volver
-          </Link>
+      {/* Cabecera */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-2">
+            <span className="inline-block rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+              {part.family.name}
+            </span>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+              {part.description}
+            </h1>
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+              {formatPrice(part.priceCents)}
+            </div>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <Link
+              href={`/catalogo/${part.id}/editar`}
+              className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-sm"
+            >
+              Editar
+            </Link>
+            <Link
+              href="/catalogo"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 transition-colors dark:border-slate-700 dark:bg-slate-900"
+            >
+              Volver
+            </Link>
+          </div>
         </div>
       </div>
 
+      {/* Fotos */}
       {part.images.length === 0 ? (
-        <div className="rounded-2xl border border-black/10 bg-white p-6 text-sm text-zinc-600 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-400">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-400 dark:border-slate-800 dark:bg-slate-900">
           Esta pieza no tiene imágenes todavía.
         </div>
       ) : (
@@ -59,7 +67,7 @@ export default async function PiezaDetallePage({
           {part.images.map((img) => (
             <div
               key={img.id}
-              className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-black/10 bg-zinc-100 dark:border-white/10 dark:bg-zinc-900"
+              className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm dark:border-slate-800 dark:bg-slate-800"
             >
               <Image
                 src={img.url}

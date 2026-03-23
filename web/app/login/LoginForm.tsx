@@ -19,7 +19,7 @@ export function LoginForm() {
 
   return (
     <form
-      className="w-full space-y-4"
+      className="space-y-5"
       onSubmit={async (e) => {
         e.preventDefault();
         setError(null);
@@ -42,10 +42,10 @@ export function LoginForm() {
         }
       }}
     >
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Email</label>
+      <div className="space-y-1.5">
+        <label className="text-sm font-semibold text-slate-700">Email</label>
         <input
-          className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black/10 dark:border-white/10 dark:bg-zinc-950"
+          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-3 focus:ring-blue-500/20"
           type="email"
           autoComplete="email"
           value={email}
@@ -54,10 +54,10 @@ export function LoginForm() {
         />
       </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Contraseña</label>
+      <div className="space-y-1.5">
+        <label className="text-sm font-semibold text-slate-700">Contraseña</label>
         <input
-          className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black/10 dark:border-white/10 dark:bg-zinc-950"
+          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-3 focus:ring-blue-500/20"
           type="password"
           autoComplete="current-password"
           value={password}
@@ -67,19 +67,18 @@ export function LoginForm() {
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       ) : null}
 
       <button
-        className="inline-flex w-full items-center justify-center rounded-xl bg-black px-4 py-3 text-sm font-medium text-white hover:bg-black/90 disabled:opacity-60"
+        className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 active:bg-blue-800 disabled:opacity-60 transition-colors"
         type="submit"
         disabled={loading}
       >
-        {loading ? "Entrando..." : "Entrar"}
+        {loading ? "Entrando…" : "Entrar"}
       </button>
     </form>
   );
 }
-

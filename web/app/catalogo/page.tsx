@@ -30,8 +30,8 @@ export default async function CatalogoPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Piezas</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Piezas</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Busca, filtra por familia y ordena por precio.
         </p>
       </div>

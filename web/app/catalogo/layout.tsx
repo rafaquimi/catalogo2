@@ -13,24 +13,28 @@ export default async function CatalogoLayout({
   if (!session) redirect("/login");
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-950 dark:bg-black dark:text-zinc-50">
-      <header className="sticky top-0 z-10 border-b border-black/10 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-black/60">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <Link className="text-sm font-semibold" href="/catalogo">
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50">
+      <header className="sticky top-0 z-10 bg-gradient-to-r from-blue-800 to-blue-900 shadow-md shadow-blue-900/30">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-3">
+          <div className="flex items-center gap-4">
+            <Link
+              className="flex items-center gap-2 text-white font-bold text-lg tracking-tight hover:text-blue-200 transition-colors"
+              href="/catalogo"
+            >
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 text-sm font-black">C</span>
               Catálogo
             </Link>
-            <span className="text-xs text-zinc-500">{session.user?.email}</span>
+            <span className="hidden sm:block text-xs text-blue-300">{session.user?.email}</span>
           </div>
           <nav className="flex items-center gap-2">
             <Link
-              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm hover:bg-zinc-50 dark:border-white/10 dark:bg-zinc-950 dark:hover:bg-zinc-900"
+              className="rounded-lg bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20 transition-colors"
               href="/catalogo/nueva"
             >
-              Nueva pieza
+              + Nueva pieza
             </Link>
             <Link
-              className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm hover:bg-zinc-50 dark:border-white/10 dark:bg-zinc-950 dark:hover:bg-zinc-900"
+              className="rounded-lg bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20 transition-colors"
               href="/catalogo/familias"
             >
               Familias
@@ -43,4 +47,3 @@ export default async function CatalogoLayout({
     </div>
   );
 }
-
