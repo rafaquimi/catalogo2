@@ -9,6 +9,31 @@ const credentialsSchema = z.object({
   password: z.string().min(1),
 });
 
+// Máximo de intentos fallidos antes de bloquear temporalmente
+const MAX_ATTEMPTS = 10;
+// Ventana de tiempo en minutos para contar intentos
+const WINDOW_MINUTES = 15;
+
+async function checkRateLimit(email: string): Promise<boolean> {
+  const since = new Date(Date.now() - WINDOW_MINUTES * 60 * 1000);
+  const count = await prisma.loginAttempt.count({
+    where: { email, createdAt: { gte: since } },
+  });
+  return count >= MAX_ATTEMPTS;
+}
+
+async function recordFailedAttempt(email: string) {
+  await prisma.loginAttempt.create({ data: { email } });
+  // Limpiar intentos antiguos (> 24h) para no crecer indefinidamente
+  await prisma.loginAttempt.deleteMany({
+    where: { email, createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+  });
+}
+
+async function clearAttempts(email: string) {
+  await prisma.loginAttempt.deleteMany({ where: { email } });
+}
+
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   providers: [
@@ -23,12 +48,29 @@ export const authOptions: NextAuthOptions = {
         if (!parsed.success) return null;
 
         const { email, password } = parsed.data;
+
+        // Comprobar si la cuenta está bloqueada por demasiados intentos
+        const blocked = await checkRateLimit(email);
+        if (blocked) {
+          // Lanzamos un error con mensaje específico para mostrarlo en el login
+          throw new Error("Demasiados intentos. Espera 15 minutos.");
+        }
+
         const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) return null;
+        if (!user) {
+          // Registrar intento incluso si el usuario no existe (evita enumeración de usuarios)
+          await recordFailedAttempt(email);
+          return null;
+        }
 
         const ok = await bcrypt.compare(password, user.passwordHash);
-        if (!ok) return null;
+        if (!ok) {
+          await recordFailedAttempt(email);
+          return null;
+        }
 
+        // Login correcto: limpiar intentos fallidos
+        await clearAttempts(email);
         return { id: user.id, email: user.email };
       },
     }),
@@ -49,4 +91,3 @@ export const authOptions: NextAuthOptions = {
     },
   },
 };
-

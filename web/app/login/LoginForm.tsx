@@ -32,7 +32,11 @@ export function LoginForm() {
             callbackUrl,
           });
           if (!res || res.error) {
-            setError("Email o contraseña incorrectos.");
+            setError(
+              res?.error === "Demasiados intentos. Espera 15 minutos."
+                ? "Demasiados intentos fallidos. Espera 15 minutos e inténtalo de nuevo."
+                : "Email o contraseña incorrectos."
+            );
             return;
           }
           router.push(res.url ?? callbackUrl);

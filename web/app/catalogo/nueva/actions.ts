@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth-guard";
 import { getR2Client, getR2Bucket, getR2PublicUrl } from "@/lib/r2";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
@@ -26,6 +27,8 @@ const createPartSchema = z.object({
 });
 
 export async function createPart(formData: FormData) {
+  await requireAuth();
+
   const raw = {
     description: String(formData.get("description") ?? ""),
     familyId: String(formData.get("familyId") ?? ""),

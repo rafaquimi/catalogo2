@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth-guard";
 import { getR2Client, getR2Bucket, getR2PublicUrl } from "@/lib/r2";
 import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
@@ -23,6 +24,8 @@ const updatePartSchema = z.object({
 });
 
 export async function updatePart(id: string, formData: FormData) {
+  await requireAuth();
+
   const raw = {
     description: String(formData.get("description") ?? ""),
     familyId: String(formData.get("familyId") ?? ""),
@@ -92,6 +95,8 @@ export async function updatePart(id: string, formData: FormData) {
 }
 
 export async function deletePart(id: string) {
+  await requireAuth();
+
   // Borrar imágenes de R2
   const images = await prisma.partImage.findMany({ where: { partId: id } });
   const r2PublicUrl = getR2PublicUrl();
@@ -114,6 +119,8 @@ export async function deletePart(id: string) {
 }
 
 export async function deleteImage(imageId: string, partId: string) {
+  await requireAuth();
+
   const image = await prisma.partImage.findUnique({ where: { id: imageId } });
   if (!image) return;
 

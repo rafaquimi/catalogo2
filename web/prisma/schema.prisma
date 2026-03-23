@@ -53,3 +53,13 @@ model PartImage {
 
   @@index([partId])
 }
+
+// Registro de intentos fallidos de login para rate limiting
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  ip        String   @default("unknown")
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+}

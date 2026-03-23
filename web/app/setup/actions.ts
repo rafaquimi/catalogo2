@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 
 const setupSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(10, "La contraseña debe tener al menos 10 caracteres"),
 });
 
 export async function createAdmin(formData: FormData) {
