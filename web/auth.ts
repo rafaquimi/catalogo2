@@ -15,23 +15,36 @@ const MAX_ATTEMPTS = 10;
 const WINDOW_MINUTES = 15;
 
 async function checkRateLimit(email: string): Promise<boolean> {
-  const since = new Date(Date.now() - WINDOW_MINUTES * 60 * 1000);
-  const count = await prisma.loginAttempt.count({
-    where: { email, createdAt: { gte: since } },
-  });
-  return count >= MAX_ATTEMPTS;
+  try {
+    const since = new Date(Date.now() - WINDOW_MINUTES * 60 * 1000);
+    const count = await prisma.loginAttempt.count({
+      where: { email, createdAt: { gte: since } },
+    });
+    return count >= MAX_ATTEMPTS;
+  } catch {
+    // Si la tabla aún no existe o hay error de BD, no bloquear el login
+    return false;
+  }
 }
 
 async function recordFailedAttempt(email: string) {
-  await prisma.loginAttempt.create({ data: { email } });
-  // Limpiar intentos antiguos (> 24h) para no crecer indefinidamente
-  await prisma.loginAttempt.deleteMany({
-    where: { email, createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
-  });
+  try {
+    await prisma.loginAttempt.create({ data: { email } });
+    // Limpiar intentos antiguos (> 24h) para no crecer indefinidamente
+    await prisma.loginAttempt.deleteMany({
+      where: { email, createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+    });
+  } catch {
+    // Si falla el registro del intento, continuar igualmente
+  }
 }
 
 async function clearAttempts(email: string) {
-  await prisma.loginAttempt.deleteMany({ where: { email } });
+  try {
+    await prisma.loginAttempt.deleteMany({ where: { email } });
+  } catch {
+    // Si falla la limpieza, continuar igualmente
+  }
 }
 
 export const authOptions: NextAuthOptions = {
