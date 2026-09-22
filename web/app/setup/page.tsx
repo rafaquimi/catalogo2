@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { createAdmin } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function SetupPage() {
   const hasUsers = (await prisma.user.count()) > 0;
   if (hasUsers) redirect("/login");
@@ -35,11 +37,11 @@ export default async function SetupPage() {
                 className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-black/10 dark:border-white/10 dark:bg-zinc-950"
                 type="password"
                 name="password"
-                minLength={6}
+                minLength={10}
                 required
               />
               <p className="text-xs text-zinc-500">
-                Mínimo 6 caracteres.
+                Mínimo 10 caracteres.
               </p>
             </div>
             <button className="inline-flex w-full items-center justify-center rounded-xl bg-black px-4 py-3 text-sm font-medium text-white hover:bg-black/90">
@@ -51,4 +53,3 @@ export default async function SetupPage() {
     </div>
   );
 }
-

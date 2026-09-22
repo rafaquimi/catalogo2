@@ -2,7 +2,12 @@
 
 import { useRef, useState, useTransition } from "react";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
+import Link from "next/link";
 import { createPart } from "./actions";
+import {
+  MAX_IMAGES_PER_PART,
+  validateImageFile,
+} from "@/lib/image-rules";
 
 interface Props {
   families: { id: string; name: string }[];
@@ -25,6 +30,18 @@ export function NuevaPiezaForm({ families }: Props) {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setError(validationError);
+      e.target.value = "";
+      return;
+    }
+    if (images.length >= MAX_IMAGES_PER_PART) {
+      setError(`Puedes guardar un máximo de ${MAX_IMAGES_PER_PART} fotos por pieza.`);
+      e.target.value = "";
+      return;
+    }
+    setError(null);
     const preview = URL.createObjectURL(file);
     setImages((prev) => [...prev, { file, preview }]);
     e.target.value = "";
@@ -154,12 +171,12 @@ export function NuevaPiezaForm({ families }: Props) {
       )}
 
       <div className="mt-6 flex items-center justify-end gap-3">
-        <a
+        <Link
           href="/catalogo"
           className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 hover:bg-slate-50 transition-colors dark:border-slate-700 dark:bg-slate-900"
         >
           Cancelar
-        </a>
+        </Link>
         <button
           type="submit"
           disabled={isPending}

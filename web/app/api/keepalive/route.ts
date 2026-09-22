@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  if (!process.env.CRON_SECRET) {
+    return new Response("Not configured", { status: 503 });
+  }
+
   const authHeader = request.headers.get("authorization");
 
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

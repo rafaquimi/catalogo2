@@ -3,6 +3,8 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 function formatPrice(priceCents: number) {
   return new Intl.NumberFormat("es-ES", {
     style: "currency",

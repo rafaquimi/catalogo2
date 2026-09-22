@@ -2,6 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { NuevaPiezaForm } from "./NuevaPiezaForm";
 
+export const dynamic = "force-dynamic";
+
 export default async function NuevaPiezaPage() {
   const families = await prisma.family.findMany({ orderBy: { name: "asc" } });
 

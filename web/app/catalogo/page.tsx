@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { CatalogClient } from "./CatalogClient";
 
+export const dynamic = "force-dynamic";
+
 function formatPrice(priceCents: number) {
   return new Intl.NumberFormat("es-ES", {
     style: "currency",

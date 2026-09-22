@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { createFamily } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function FamiliasPage() {
   const families = await prisma.family.findMany({
     orderBy: { name: "asc" },

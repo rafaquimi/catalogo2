@@ -5,13 +5,19 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-guard";
-import { getR2Client, getR2Bucket, getR2PublicUrl } from "@/lib/r2";
-import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
-import crypto from "crypto";
-import sharp from "sharp";
+import { getR2Bucket, getR2Client } from "@/lib/r2";
+import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import {
+  deleteUploadedImages,
+  getImageFiles,
+  getR2KeyFromUrl,
+  uploadImages,
+  validateImageFiles,
+} from "@/lib/image-storage";
+import { MAX_IMAGES_PER_PART } from "@/lib/image-rules";
 
 const updatePartSchema = z.object({
-  description: z.string().min(1),
+  description: z.string().trim().min(1).max(500),
   familyId: z.string().min(1),
   price: z.string().min(1).transform((v, ctx) => {
     const n = parseFloat(v.replace(",", "."));
@@ -35,58 +41,32 @@ export async function updatePart(id: string, formData: FormData) {
   const parsed = updatePartSchema.safeParse(raw);
   if (!parsed.success) throw new Error("Datos inválidos.");
 
-  await prisma.part.update({
-    where: { id },
-    data: {
-      description: parsed.data.description,
-      familyId: parsed.data.familyId,
-      priceCents: Math.round(parsed.data.price * 100),
-    },
-  });
+  const files = getImageFiles(formData);
+  const existingImages = await prisma.partImage.count({ where: { partId: id } });
+  validateImageFiles(files, MAX_IMAGES_PER_PART - existingImages);
 
-  // Subir nuevas imágenes si las hay
-  const files = formData
-    .getAll("images")
-    .filter((f): f is File => f instanceof File && f.size > 0);
+  const uploaded = await uploadImages(files);
 
-  if (files.length > 0) {
-    const imagesData: { url: string; partId: string }[] = [];
+  try {
+    await prisma.$transaction(async (transaction) => {
+      await transaction.part.update({
+        where: { id },
+        data: {
+          description: parsed.data.description,
+          familyId: parsed.data.familyId,
+          priceCents: Math.round(parsed.data.price * 100),
+        },
+      });
 
-    for (const file of files) {
-      const inputBuf = Buffer.from(await file.arrayBuffer());
-      let uploadBuf: Buffer;
-      let contentType: string;
-      let ext: string;
-
-      try {
-        uploadBuf = await sharp(inputBuf)
-          .rotate()
-          .resize({ width: 1200, withoutEnlargement: true })
-          .webp({ quality: 82 })
-          .toBuffer();
-        contentType = "image/webp";
-        ext = "webp";
-      } catch {
-        uploadBuf = inputBuf;
-        contentType = file.type || "image/jpeg";
-        ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      if (uploaded.length > 0) {
+        await transaction.partImage.createMany({
+          data: uploaded.map(({ url }) => ({ url, partId: id })),
+        });
       }
-
-      const key = `uploads/${crypto.randomUUID()}.${ext}`;
-
-      await getR2Client().send(
-        new PutObjectCommand({
-          Bucket: getR2Bucket(),
-          Key: key,
-          Body: uploadBuf,
-          ContentType: contentType,
-        })
-      );
-
-      imagesData.push({ url: `${getR2PublicUrl()}/${key}`, partId: id });
-    }
-
-    await prisma.partImage.createMany({ data: imagesData });
+    });
+  } catch (error) {
+    await deleteUploadedImages(uploaded);
+    throw error;
   }
 
   revalidatePath(`/catalogo/${id}`);
@@ -97,13 +77,13 @@ export async function updatePart(id: string, formData: FormData) {
 export async function deletePart(id: string) {
   await requireAuth();
 
-  // Borrar imágenes de R2
   const images = await prisma.partImage.findMany({ where: { partId: id } });
-  const r2PublicUrl = getR2PublicUrl();
+  await prisma.part.delete({ where: { id } });
 
   for (const img of images) {
     try {
-      const key = img.url.replace(`${r2PublicUrl}/`, "");
+      const key = getR2KeyFromUrl(img.url);
+      if (!key) continue;
       await getR2Client().send(
         new DeleteObjectCommand({ Bucket: getR2Bucket(), Key: key })
       );
@@ -112,8 +92,6 @@ export async function deletePart(id: string) {
     }
   }
 
-  await prisma.part.delete({ where: { id } });
-
   revalidatePath("/catalogo");
   redirect("/catalogo");
 }
@@ -121,21 +99,23 @@ export async function deletePart(id: string) {
 export async function deleteImage(imageId: string, partId: string) {
   await requireAuth();
 
-  const image = await prisma.partImage.findUnique({ where: { id: imageId } });
+  const image = await prisma.partImage.findFirst({
+    where: { id: imageId, partId },
+  });
   if (!image) return;
 
-  // Borrar de R2
+  await prisma.partImage.delete({ where: { id: imageId } });
+
   try {
-    const r2PublicUrl = getR2PublicUrl();
-    const key = image.url.replace(`${r2PublicUrl}/`, "");
-    await getR2Client().send(
-      new DeleteObjectCommand({ Bucket: getR2Bucket(), Key: key })
-    );
+    const key = getR2KeyFromUrl(image.url);
+    if (key) {
+      await getR2Client().send(
+        new DeleteObjectCommand({ Bucket: getR2Bucket(), Key: key })
+      );
+    }
   } catch {
     // Si falla R2 borramos igualmente de la BD
   }
-
-  await prisma.partImage.delete({ where: { id: imageId } });
 
   revalidatePath(`/catalogo/${partId}`);
   revalidatePath(`/catalogo/${partId}/editar`);
