@@ -8,6 +8,10 @@ CREATE TABLE IF NOT EXISTS "LoginAttempt" (
   "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Esta tabla solo se usa desde Prisma mediante la conexión privada del
+-- servidor. No debe ser accesible con las claves públicas de Supabase.
+ALTER TABLE "LoginAttempt" ENABLE ROW LEVEL SECURITY;
+
 CREATE INDEX IF NOT EXISTS "LoginAttempt_email_createdAt_idx"
   ON "LoginAttempt" (email, "createdAt");
 
