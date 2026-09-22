@@ -1,7 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
@@ -11,6 +11,8 @@ const setupSchema = z.object({
 });
 
 export async function createAdmin(formData: FormData) {
+  if (process.env.SETUP_ENABLED !== "true") notFound();
+
   const hasUsers = (await prisma.user.count()) > 0;
   if (hasUsers) redirect("/login");
 
@@ -29,4 +31,3 @@ export async function createAdmin(formData: FormData) {
 
   redirect("/login");
 }
-

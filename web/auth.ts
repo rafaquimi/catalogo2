@@ -14,6 +14,7 @@ const credentialsSchema = z.object({
 const MAX_ATTEMPTS_PER_ACCOUNT_AND_IP = 10;
 const MAX_ATTEMPTS_PER_IP = 30;
 const WINDOW_MINUTES = 15;
+const SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 
 // Evita que el tiempo de respuesta revele si el email existe.
 const DUMMY_PASSWORD_HASH =
@@ -50,7 +51,13 @@ async function clearAttempts(email: string, ip: string) {
 }
 
 export const authOptions: NextAuthOptions = {
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+    maxAge: SESSION_MAX_AGE_SECONDS,
+  },
+  jwt: {
+    maxAge: SESSION_MAX_AGE_SECONDS,
+  },
   providers: [
     CredentialsProvider({
       name: "Credenciales",

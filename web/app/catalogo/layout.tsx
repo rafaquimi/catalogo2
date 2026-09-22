@@ -39,6 +39,12 @@ export default async function CatalogoLayout({
             >
               Familias
             </Link>
+            <Link
+              className="rounded-lg bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20 transition-colors"
+              href="/catalogo/cuenta"
+            >
+              Cuenta
+            </Link>
             <SignOutButton />
           </nav>
         </div>

@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createAdmin } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function SetupPage() {
+  if (process.env.SETUP_ENABLED !== "true") notFound();
+
   const hasUsers = (await prisma.user.count()) > 0;
   if (hasUsers) redirect("/login");
 

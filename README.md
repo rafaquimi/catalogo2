@@ -100,13 +100,14 @@ CATALOGOS3/
 │   │   │   ├── page.tsx        # Listado con búsqueda, filtro y ordenación
 │   │   │   ├── CatalogClient.tsx  # Filtros dinámicos (cliente)
 │   │   │   ├── CatalogCard.tsx    # Tarjeta con manejadores de fotos
+│   │   │   ├── cuenta/         # Cambio protegido de correo y contraseña
 │   │   │   ├── nueva/          # Alta de pieza nueva
 │   │   │   └── [id]/           # Detalle y edición de pieza
 │   │   │       ├── page.tsx
 │   │   │       ├── editar/
 │   │   │       └── ImageViewer.tsx
 │   │   ├── login/              # Página de login
-│   │   ├── setup/              # Creación del primer usuario admin
+│   │   ├── setup/              # Alta inicial, deshabilitada por defecto
 │   │   └── api/auth/           # Endpoints de NextAuth
 │   ├── lib/
 │   │   ├── prisma.ts           # Cliente Prisma (singleton)
@@ -114,7 +115,7 @@ CATALOGOS3/
 │   ├── prisma/
 │   │   └── schema.prisma       # Modelos: User, Family, Part, PartImage
 │   ├── prisma.config.ts        # Config Prisma v7 (URL de migración)
-│   └── next.config.ts          # Config Next.js (sharp, R2 domains, body limit)
+│   └── next.config.ts          # Config Next.js (sharp, cabeceras, body limit)
 ├── .env.example                # Plantilla de variables de entorno
 └── README.md                   # Este archivo
 ```
@@ -163,7 +164,10 @@ npx prisma db push
 npm run dev
 ```
 
-Abre `http://localhost:3000` → ve a `/setup` para crear el usuario administrador.
+Para la instalación inicial, establece temporalmente `SETUP_ENABLED=true`, abre
+`http://localhost:3000/setup` y crea el usuario administrador. Después cambia
+`SETUP_ENABLED=false` y reinicia la aplicación. En producción debe permanecer
+siempre deshabilitado.
 
 ---
 

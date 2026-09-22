@@ -11,6 +11,7 @@ export function LoginForm() {
     () => searchParams.get("callbackUrl") ?? "/catalogo",
     [searchParams],
   );
+  const accountUpdated = searchParams.get("cuentaActualizada") === "1";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -71,6 +72,12 @@ export function LoginForm() {
           required
         />
       </div>
+
+      {accountUpdated && !error ? (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          Cuenta actualizada. Inicia sesión con tus datos nuevos.
+        </div>
+      ) : null}
 
       {error ? (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

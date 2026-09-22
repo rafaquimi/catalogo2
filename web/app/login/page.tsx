@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { LoginForm } from "./LoginForm";
@@ -27,16 +26,8 @@ export default async function LoginPage() {
               <LoginForm />
             </Suspense>
           ) : (
-            <div className="space-y-4">
-              <div className="rounded-xl border border-amber-400/30 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                No hay usuarios creados todavía. Primero crea el usuario administrador.
-              </div>
-              <Link
-                className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
-                href="/setup"
-              >
-                Crear administrador
-              </Link>
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              No hay una cuenta administradora configurada. Contacta con el responsable del sistema.
             </div>
           )}
         </div>
