@@ -62,4 +62,5 @@ model LoginAttempt {
   createdAt DateTime @default(now())
 
   @@index([email, createdAt])
+  @@index([ip, createdAt])
 }

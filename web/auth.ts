@@ -5,46 +5,48 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
 const credentialsSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().toLowerCase().email(),
   password: z.string().min(1),
 });
 
-// Máximo de intentos fallidos antes de bloquear temporalmente
-const MAX_ATTEMPTS = 10;
-// Ventana de tiempo en minutos para contar intentos
+// Limita tanto los intentos contra una cuenta desde una IP como el barrido de
+// muchas cuentas desde la misma IP.
+const MAX_ATTEMPTS_PER_ACCOUNT_AND_IP = 10;
+const MAX_ATTEMPTS_PER_IP = 30;
 const WINDOW_MINUTES = 15;
 
+// Evita que el tiempo de respuesta revele si el email existe.
+const DUMMY_PASSWORD_HASH =
+  "$2b$12$iatkygh7JfH7YXW/3YMcwesM5hieKYYpy7Hx9wILbJN9MNJW.cZQu";
+
+function getClientIp(headers: Record<string, string> | undefined): string {
+  const forwardedFor = headers?.["x-forwarded-for"];
+  return forwardedFor?.split(",")[0]?.trim().slice(0, 64) || "unknown";
+}
+
 async function checkRateLimit(email: string, ip: string): Promise<boolean> {
-  try {
-    const since = new Date(Date.now() - WINDOW_MINUTES * 60 * 1000);
-    const count = await prisma.loginAttempt.count({
+  const since = new Date(Date.now() - WINDOW_MINUTES * 60 * 1000);
+  const [accountAndIpAttempts, ipAttempts] = await Promise.all([
+    prisma.loginAttempt.count({
       where: { email, ip, createdAt: { gte: since } },
-    });
-    return count >= MAX_ATTEMPTS;
-  } catch {
-    // Si la tabla aún no existe o hay error de BD, no bloquear el login
-    return false;
-  }
+    }),
+    prisma.loginAttempt.count({
+      where: { ip, createdAt: { gte: since } },
+    }),
+  ]);
+
+  return (
+    accountAndIpAttempts >= MAX_ATTEMPTS_PER_ACCOUNT_AND_IP ||
+    ipAttempts >= MAX_ATTEMPTS_PER_IP
+  );
 }
 
 async function recordFailedAttempt(email: string, ip: string) {
-  try {
-    await prisma.loginAttempt.create({ data: { email, ip } });
-    // Limpiar intentos antiguos (> 24h) para no crecer indefinidamente
-    await prisma.loginAttempt.deleteMany({
-      where: { createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
-    });
-  } catch {
-    // Si falla el registro del intento, continuar igualmente
-  }
+  await prisma.loginAttempt.create({ data: { email, ip } });
 }
 
 async function clearAttempts(email: string, ip: string) {
-  try {
-    await prisma.loginAttempt.deleteMany({ where: { email, ip } });
-  } catch {
-    // Si falla la limpieza, continuar igualmente
-  }
+  await prisma.loginAttempt.deleteMany({ where: { email, ip } });
 }
 
 export const authOptions: NextAuthOptions = {
@@ -61,20 +63,27 @@ export const authOptions: NextAuthOptions = {
         if (!parsed.success) return null;
 
         const { email, password } = parsed.data;
-        const forwardedFor = request.headers?.["x-forwarded-for"];
-        const ip = forwardedFor?.split(",")[0]?.trim() || "unknown";
+        const ip = getClientIp(request.headers);
 
-        // Comprobar si la cuenta está bloqueada por demasiados intentos
-        const blocked = await checkRateLimit(email, ip);
+        let blocked: boolean;
+        try {
+          blocked = await checkRateLimit(email, ip);
+        } catch (error) {
+          console.error("No se ha podido comprobar el límite de acceso", error);
+          // Fallo seguro: si la protección no está operativa, no aceptamos logins.
+          throw new Error("Servicio de seguridad no disponible.");
+        }
+
         if (blocked) {
-          // Lanzamos un error con mensaje específico para mostrarlo en el login
           throw new Error("Demasiados intentos. Espera 15 minutos.");
         }
 
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
-          // Registrar intento incluso si el usuario no existe (evita enumeración de usuarios)
-          await recordFailedAttempt(email, ip);
+          await Promise.all([
+            bcrypt.compare(password, DUMMY_PASSWORD_HASH),
+            recordFailedAttempt(email, ip),
+          ]);
           return null;
         }
 

@@ -10,3 +10,6 @@ CREATE TABLE IF NOT EXISTS "LoginAttempt" (
 
 CREATE INDEX IF NOT EXISTS "LoginAttempt_email_createdAt_idx"
   ON "LoginAttempt" (email, "createdAt");
+
+CREATE INDEX IF NOT EXISTS "LoginAttempt_ip_createdAt_idx"
+  ON "LoginAttempt" (ip, "createdAt");
