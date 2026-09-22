@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getPrivateImageUrl } from "@/lib/private-image";
 import { CatalogClient } from "./CatalogClient";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,10 @@ export default async function CatalogoPage() {
     familyId: p.familyId,
     priceCents: p.priceCents,
     price: formatPrice(p.priceCents),
-    images: p.images.map((img) => ({ id: img.id, url: img.url })),
+    images: p.images.map((img) => ({
+      id: img.id,
+      url: getPrivateImageUrl(img.id),
+    })),
   }));
 
   return (

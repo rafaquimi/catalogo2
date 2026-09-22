@@ -29,6 +29,7 @@ export function ImageViewer({ images, alt }: Props) {
             src={images[current].url}
             alt={`${alt} - foto ${current + 1}`}
             fill
+            unoptimized
             className="object-cover transition-opacity duration-300"
             sizes="(max-width: 768px) 100vw, 800px"
             priority
@@ -81,6 +82,7 @@ export function ImageViewer({ images, alt }: Props) {
                 src={img.url}
                 alt={`Miniatura ${i + 1}`}
                 fill
+                unoptimized
                 className="object-cover"
                 sizes="64px"
               />
@@ -122,6 +124,7 @@ export function ImageViewer({ images, alt }: Props) {
               src={images[current].url}
               alt={`${alt} - foto ${current + 1}`}
               fill
+              unoptimized
               className="object-contain"
               sizes="90vw"
             />

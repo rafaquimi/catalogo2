@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getPrivateImageUrl } from "@/lib/private-image";
 
 export const dynamic = "force-dynamic";
 
@@ -72,9 +73,10 @@ export default async function PiezaDetallePage({
               className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm dark:border-slate-800 dark:bg-slate-800"
             >
               <Image
-                src={img.url}
+                src={getPrivateImageUrl(img.id)}
                 alt={part.description}
                 fill
+                unoptimized
                 className="object-cover"
                 sizes="(max-width: 640px) 100vw, 50vw"
               />

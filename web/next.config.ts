@@ -22,18 +22,6 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "20mb",
     },
   },
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**.r2.dev",
-      },
-      {
-        protocol: "https",
-        hostname: "**.r2.cloudflarestorage.com",
-      },
-    ],
-  },
   async headers() {
     return [
       {

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getPrivateImageUrl } from "@/lib/private-image";
 import { EditarPiezaForm } from "./EditarPiezaForm";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +30,16 @@ export default async function EditarPiezaPage({
           Modifica los datos, añade o elimina fotos.
         </p>
       </div>
-      <EditarPiezaForm part={part} families={families} />
+      <EditarPiezaForm
+        part={{
+          ...part,
+          images: part.images.map((image) => ({
+            id: image.id,
+            url: getPrivateImageUrl(image.id),
+          })),
+        }}
+        families={families}
+      />
     </div>
   );
 }

@@ -169,7 +169,14 @@ export function EditarPiezaForm({ part, families }: Props) {
                 key={img.id}
                 className="relative h-24 w-24 overflow-hidden rounded-xl border-2 border-slate-200 shadow-sm"
               >
-                <Image src={img.url} alt="Foto de la pieza" fill className="object-cover" sizes="96px" />
+                <Image
+                  src={img.url}
+                  alt="Foto de la pieza"
+                  fill
+                  unoptimized
+                  className="object-cover"
+                  sizes="96px"
+                />
                 <button
                   type="button"
                   onClick={() => handleDeleteImage(img.id)}
