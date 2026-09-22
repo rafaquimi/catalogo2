@@ -14,8 +14,16 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Hace una consulta ligera para mantener activa la conexión con Supabase
-    await prisma.$queryRaw`SELECT 1`;
+    // Mantiene activa la conexión y evita que crezca indefinidamente el
+    // historial utilizado para limitar los intentos de acceso.
+    await prisma.$transaction([
+      prisma.$queryRaw`SELECT 1`,
+      prisma.loginAttempt.deleteMany({
+        where: {
+          createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
+      }),
+    ]);
 
     return Response.json({
       ok: true,

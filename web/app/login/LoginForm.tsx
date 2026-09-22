@@ -35,6 +35,8 @@ export function LoginForm() {
             setError(
               res?.error === "Demasiados intentos. Espera 15 minutos."
                 ? "Demasiados intentos fallidos. Espera 15 minutos e inténtalo de nuevo."
+                : res?.error === "Servicio de seguridad no disponible."
+                  ? "El acceso está temporalmente protegido. Inténtalo de nuevo en unos minutos."
                 : "Email o contraseña incorrectos."
             );
             return;
