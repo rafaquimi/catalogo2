@@ -74,6 +74,7 @@ Copia `.env.example` a `web/.env` y rellena los valores:
 # NextAuth
 NEXTAUTH_SECRET=...          # Clave aleatoria (openssl rand -base64 32)
 NEXTAUTH_URL=https://...     # URL pública de la app
+CRON_SECRET=...              # Protege el endpoint /api/keepalive
 
 # Supabase PostgreSQL
 DATABASE_URL=postgresql://...    # Transaction mode  (puerto 6543)
@@ -131,6 +132,7 @@ NuevaPiezaForm / EditarPiezaForm  (Client Component)
         │
         ▼ FormData con File[]
 Server Action (createPart / updatePart)
+  → valida formato, máximo 10 MB por archivo y 10 fotos por pieza
   → sharp: rotate() + resize(1200px) + webp(quality 82)
   → PutObjectCommand → Cloudflare R2
   → guarda URL pública en PostgreSQL (tabla PartImage)

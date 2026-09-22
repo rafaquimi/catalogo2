@@ -3,7 +3,12 @@
 import { useRef, useState, useTransition } from "react";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import Image from "next/image";
+import Link from "next/link";
 import { updatePart, deletePart, deleteImage } from "./actions";
+import {
+  MAX_IMAGES_PER_PART,
+  validateImageFile,
+} from "@/lib/image-rules";
 
 interface ExistingImage {
   id: string;
@@ -40,6 +45,18 @@ export function EditarPiezaForm({ part, families }: Props) {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setError(validationError);
+      e.target.value = "";
+      return;
+    }
+    if (part.images.length + newImages.length >= MAX_IMAGES_PER_PART) {
+      setError(`Puedes guardar un máximo de ${MAX_IMAGES_PER_PART} fotos por pieza.`);
+      e.target.value = "";
+      return;
+    }
+    setError(null);
     const preview = URL.createObjectURL(file);
     setNewImages((prev) => [...prev, { file, preview }]);
     e.target.value = "";
@@ -226,12 +243,12 @@ export function EditarPiezaForm({ part, families }: Props) {
         </button>
 
         <div className="flex gap-3">
-          <a
+          <Link
             href={`/catalogo/${part.id}`}
             className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 hover:bg-slate-50 transition-colors dark:border-slate-700 dark:bg-slate-900"
           >
             Cancelar
-          </a>
+          </Link>
           <button
             type="submit"
             disabled={isPending}
