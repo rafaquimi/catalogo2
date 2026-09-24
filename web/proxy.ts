@@ -2,7 +2,7 @@ import { getToken } from "next-auth/jwt";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-const CSP_REPORT_ONLY = true;
+const CSP_REPORT_ONLY = false;
 
 function createContentSecurityPolicy(nonce: string) {
   const isDevelopment = process.env.NODE_ENV === "development";
