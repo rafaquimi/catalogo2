@@ -38,7 +38,8 @@ model Part {
   familyId String
   family   Family @relation(fields: [familyId], references: [id], onDelete: Restrict)
 
-  images PartImage[]
+  images     PartImage[]
+  quoteItems QuoteItem[]
 
   @@index([familyId])
 }
@@ -81,4 +82,103 @@ model AuditLog {
   @@index([createdAt])
   @@index([entityType, entityId])
   @@index([actorUserId, createdAt])
+}
+
+// Datos editables de la empresa emisora. La aplicación utiliza una sola fila.
+model CompanySettings {
+  id                  String   @id @default("default")
+  businessName        String   @default("")
+  taxId               String   @default("")
+  address             String   @default("")
+  postalCode          String   @default("")
+  city                String   @default("")
+  province            String   @default("")
+  phone               String   @default("")
+  email               String   @default("")
+  website             String   @default("")
+  logoUrl             String?
+  quotePrefix         String   @default("PRE")
+  defaultValidityDays Int      @default(30)
+  defaultTaxBps       Int      @default(2100)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  email     String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quotes Quote[]
+
+  @@index([name])
+  @@index([phone])
+}
+
+model QuoteCounter {
+  year      Int      @id
+  nextValue Int      @default(1)
+  updatedAt DateTime @updatedAt
+}
+
+model Quote {
+  id            String   @id @default(cuid())
+  number        String   @unique
+  status        String   @default("DRAFT")
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  customerName  String
+  customerPhone String
+  customerEmail String?
+  issueDate     DateTime @default(now())
+  validUntil    DateTime
+  notes         String?
+  taxRateBps    Int      @default(2100)
+  taxBaseCents  Int
+  taxCents      Int
+  totalCents    Int
+  createdBy     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  items      QuoteItem[]
+  deliveries QuoteDelivery[]
+
+  @@index([customerId, createdAt])
+  @@index([status, createdAt])
+  @@index([createdAt])
+}
+
+model QuoteItem {
+  id             String  @id @default(cuid())
+  quoteId        String
+  quote          Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  partId         String?
+  part           Part?   @relation(fields: [partId], references: [id], onDelete: SetNull)
+  description    String
+  quantity       Int
+  unitPriceCents Int
+  discountBps    Int     @default(0)
+  totalCents     Int
+  position       Int
+
+  @@index([quoteId, position])
+  @@index([partId])
+}
+
+model QuoteDelivery {
+  id        String   @id @default(cuid())
+  quoteId   String
+  quote     Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  channel   String
+  recipient String
+  status    String
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([quoteId, createdAt])
 }

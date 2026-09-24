@@ -9,6 +9,8 @@ const actionLabels: Record<string, string> = {
   DELETE: "Borrado",
   LOGIN: "Acceso",
   BACKUP: "Copia",
+  SEND: "Envío",
+  SHARE: "Compartido",
 };
 
 const actionStyles: Record<string, string> = {
@@ -17,6 +19,8 @@ const actionStyles: Record<string, string> = {
   DELETE: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
   LOGIN: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
   BACKUP: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+  SEND: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300",
+  SHARE: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
 };
 
 function formatDate(date: Date) {

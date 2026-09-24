@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [families, auditLogs] = await Promise.all([
+    const [families, customers, quotes, companySettings, auditLogs] = await Promise.all([
       prisma.family.findMany({
         orderBy: { createdAt: "asc" },
         include: {
@@ -24,6 +24,15 @@ export async function GET(request: Request) {
           },
         },
       }),
+      prisma.customer.findMany({ orderBy: { createdAt: "asc" } }),
+      prisma.quote.findMany({
+        orderBy: { createdAt: "asc" },
+        include: {
+          items: { orderBy: { position: "asc" } },
+          deliveries: { orderBy: { createdAt: "asc" } },
+        },
+      }),
+      prisma.companySettings.findUnique({ where: { id: "default" } }),
       prisma.auditLog.findMany({ orderBy: { createdAt: "asc" } }),
     ]);
 
@@ -32,7 +41,10 @@ export async function GET(request: Request) {
       format: "catalogo2-backup",
       version: 1,
       createdAt: createdAt.toISOString(),
+      companySettings,
       families,
+      customers,
+      quotes,
       auditLogs,
     });
     const key = `backups/catalogo-${createdAt.toISOString().replaceAll(":", "-")}.json`;
