@@ -8,7 +8,7 @@ import { getAuditActor } from "@/lib/audit";
 import { calculateLineTotal, calculateQuoteTotals } from "@/lib/quote-calculations";
 
 const itemSchema = z.object({
-  partId: z.string().min(1),
+  partId: z.string().min(1).nullable(),
   description: z.string().trim().min(1).max(500),
   quantity: z.number().int().min(1).max(9999),
   unitPriceCents: z.number().int().min(0).max(100_000_000),
@@ -107,6 +107,77 @@ export async function createQuote(input: unknown): Promise<QuoteActionResult> {
 
   revalidatePath("/catalogo/presupuestos");
   return { ok: true, quoteId };
+}
+
+export async function updateQuote(id: string, input: unknown): Promise<QuoteActionResult> {
+  const actor = getAuditActor(await requireAuth());
+  const parsedId = z.string().min(1).safeParse(id);
+  const parsed = quoteSchema.safeParse(input);
+  if (!parsedId.success || !parsed.success) return { ok: false, error: parsed.success ? "Presupuesto no válido." : parsed.error.issues[0]?.message || "Revisa los datos." };
+
+  const data = parsed.data;
+  try {
+    await prisma.$transaction(async transaction => {
+      const previous = await transaction.quote.findUnique({ where: { id }, select: { number: true, status: true, taxRateBps: true } });
+      if (!previous) throw new Error("Presupuesto no encontrado.");
+
+      let customer = data.customerId ? await transaction.customer.findUnique({ where: { id: data.customerId } }) : null;
+      if (customer) {
+        customer = await transaction.customer.update({
+          where: { id: customer.id },
+          data: { name: data.customerName, phone: data.customerPhone, email: data.customerEmail || null },
+        });
+      } else {
+        customer = await transaction.customer.create({
+          data: { name: data.customerName, phone: data.customerPhone, email: data.customerEmail || null },
+        });
+      }
+
+      const totals = calculateQuoteTotals(data.items, previous.taxRateBps);
+      const validUntil = new Date();
+      validUntil.setDate(validUntil.getDate() + data.validityDays);
+
+      await transaction.quote.update({
+        where: { id },
+        data: {
+          status: "DRAFT",
+          customerId: customer.id,
+          customerName: customer.name,
+          customerPhone: customer.phone,
+          customerEmail: customer.email,
+          validUntil,
+          notes: data.notes || null,
+          ...totals,
+          items: {
+            deleteMany: {},
+            create: data.items.map((item, position) => ({
+              ...item,
+              totalCents: calculateLineTotal(item),
+              position,
+            })),
+          },
+        },
+      });
+
+      await transaction.auditLog.create({ data: {
+        actorUserId: actor.userId,
+        actorEmail: actor.email,
+        action: "UPDATE",
+        entityType: "QUOTE",
+        entityId: id,
+        summary: `Presupuesto ${previous.number} editado`,
+        changes: { previousStatus: previous.status, newStatus: "DRAFT", customer: customer.name, itemCount: data.items.length, totalCents: totals.totalCents },
+      }});
+    });
+  } catch (error) {
+    console.error("No se ha podido editar el presupuesto", error);
+    return { ok: false, error: "No se han podido guardar los cambios." };
+  }
+
+  revalidatePath(`/catalogo/presupuestos/${id}`);
+  revalidatePath(`/catalogo/presupuestos/${id}/editar`);
+  revalidatePath("/catalogo/presupuestos");
+  return { ok: true, quoteId: id };
 }
 
 const allowedStatuses = ["DRAFT", "SENT", "ACCEPTED", "REJECTED", "EXPIRED"] as const;

@@ -1,5 +1,5 @@
 export interface QuoteLineInput {
-  partId: string;
+  partId: string | null;
   description: string;
   quantity: number;
   unitPriceCents: number;
