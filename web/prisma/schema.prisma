@@ -49,7 +49,7 @@ model PartImage {
   createdAt DateTime @default(now())
 
   partId String
-  part   Part @relation(fields: [partId], references: [id], onDelete: Cascade)
+  part   Part   @relation(fields: [partId], references: [id], onDelete: Cascade)
 
   @@index([partId])
 }
@@ -63,4 +63,22 @@ model LoginAttempt {
 
   @@index([email, createdAt])
   @@index([ip, createdAt])
+}
+
+// Historial inmutable de las operaciones sensibles realizadas en el catálogo.
+// No se relaciona con User para conservar el registro aunque cambie la cuenta.
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  actorEmail  String
+  action      String
+  entityType  String
+  entityId    String?
+  summary     String
+  changes     Json?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@index([actorUserId, createdAt])
 }

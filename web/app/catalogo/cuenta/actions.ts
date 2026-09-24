@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth-guard";
 import { prisma } from "@/lib/prisma";
+import { getAuditActor } from "@/lib/audit";
 
 export interface UpdateAccountResult {
   ok: boolean;
@@ -40,6 +41,7 @@ export async function updateAccount(
   formData: FormData,
 ): Promise<UpdateAccountResult> {
   const session = await requireAuth();
+  const actor = getAuditActor(session);
   const userId = (session.user as { id?: string } | undefined)?.id;
   if (!userId) return { ok: false, error: "La sesión no es válida." };
 
@@ -80,15 +82,29 @@ export async function updateAccount(
     : user.passwordHash;
 
   try {
-    await prisma.$transaction([
-      prisma.user.update({
+    await prisma.$transaction(async (transaction) => {
+      await transaction.user.update({
         where: { id: userId },
         data: { email: parsed.data.email, passwordHash },
-      }),
-      prisma.loginAttempt.deleteMany({
+      });
+      await transaction.loginAttempt.deleteMany({
         where: { email: { in: [user.email, parsed.data.email] } },
-      }),
-    ]);
+      });
+      await transaction.auditLog.create({
+        data: {
+          actorUserId: actor.userId,
+          actorEmail: actor.email,
+          action: "UPDATE",
+          entityType: "ACCOUNT",
+          entityId: userId,
+          summary: "Cuenta administradora actualizada",
+          changes: {
+            emailChanged: parsed.data.email !== user.email,
+            passwordChanged: Boolean(parsed.data.newPassword),
+          },
+        },
+      });
+    });
   } catch (error) {
     console.error("No se ha podido actualizar la cuenta", error);
     return { ok: false, error: "No se ha podido guardar el cambio." };

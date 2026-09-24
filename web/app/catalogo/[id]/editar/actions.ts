@@ -5,12 +5,10 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-guard";
-import { getR2Bucket, getR2Client } from "@/lib/r2";
-import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { getAuditActor } from "@/lib/audit";
 import {
   deleteUploadedImages,
   getImageFiles,
-  getR2KeyFromUrl,
   uploadImages,
   validateImageFiles,
 } from "@/lib/image-storage";
@@ -30,7 +28,7 @@ const updatePartSchema = z.object({
 });
 
 export async function updatePart(id: string, formData: FormData) {
-  await requireAuth();
+  const actor = getAuditActor(await requireAuth());
 
   const raw = {
     description: String(formData.get("description") ?? ""),
@@ -49,7 +47,11 @@ export async function updatePart(id: string, formData: FormData) {
 
   try {
     await prisma.$transaction(async (transaction) => {
-      await transaction.part.update({
+      const previous = await transaction.part.findUniqueOrThrow({
+        where: { id },
+        select: { description: true, familyId: true, priceCents: true },
+      });
+      const updated = await transaction.part.update({
         where: { id },
         data: {
           description: parsed.data.description,
@@ -63,6 +65,26 @@ export async function updatePart(id: string, formData: FormData) {
           data: uploaded.map(({ url }) => ({ url, partId: id })),
         });
       }
+
+      await transaction.auditLog.create({
+        data: {
+          actorUserId: actor.userId,
+          actorEmail: actor.email,
+          action: "UPDATE",
+          entityType: "PART",
+          entityId: id,
+          summary: `Pieza actualizada: ${updated.description}`,
+          changes: {
+            before: previous,
+            after: {
+              description: updated.description,
+              familyId: updated.familyId,
+              priceCents: updated.priceCents,
+            },
+            addedImages: uploaded.map(({ url }) => url),
+          },
+        },
+      });
     });
   } catch (error) {
     await deleteUploadedImages(uploaded);
@@ -75,47 +97,68 @@ export async function updatePart(id: string, formData: FormData) {
 }
 
 export async function deletePart(id: string) {
-  await requireAuth();
+  const actor = getAuditActor(await requireAuth());
 
-  const images = await prisma.partImage.findMany({ where: { partId: id } });
-  await prisma.part.delete({ where: { id } });
+  await prisma.$transaction(async (transaction) => {
+    const part = await transaction.part.findUniqueOrThrow({
+      where: { id },
+      include: {
+        family: { select: { id: true, name: true } },
+        images: { select: { id: true, url: true } },
+      },
+    });
 
-  for (const img of images) {
-    try {
-      const key = getR2KeyFromUrl(img.url);
-      if (!key) continue;
-      await getR2Client().send(
-        new DeleteObjectCommand({ Bucket: getR2Bucket(), Key: key })
-      );
-    } catch {
-      // Si falla el borrado de R2 continuamos igualmente
-    }
-  }
+    await transaction.part.delete({ where: { id } });
+    await transaction.auditLog.create({
+      data: {
+        actorUserId: actor.userId,
+        actorEmail: actor.email,
+        action: "DELETE",
+        entityType: "PART",
+        entityId: id,
+        summary: `Pieza eliminada: ${part.description}`,
+        changes: {
+          snapshot: {
+            description: part.description,
+            priceCents: part.priceCents,
+            family: part.family,
+            images: part.images,
+          },
+          imagesRetainedInR2: true,
+        },
+      },
+    });
+  });
 
   revalidatePath("/catalogo");
   redirect("/catalogo");
 }
 
 export async function deleteImage(imageId: string, partId: string) {
-  await requireAuth();
+  const actor = getAuditActor(await requireAuth());
 
-  const image = await prisma.partImage.findFirst({
-    where: { id: imageId, partId },
+  const deleted = await prisma.$transaction(async (transaction) => {
+    const image = await transaction.partImage.findFirst({
+      where: { id: imageId, partId },
+    });
+    if (!image) return false;
+
+    await transaction.partImage.delete({ where: { id: imageId } });
+    await transaction.auditLog.create({
+      data: {
+        actorUserId: actor.userId,
+        actorEmail: actor.email,
+        action: "DELETE",
+        entityType: "PART_IMAGE",
+        entityId: imageId,
+        summary: "Imagen retirada de una pieza",
+        changes: { partId, url: image.url, retainedInR2: true },
+      },
+    });
+    return true;
   });
-  if (!image) return;
 
-  await prisma.partImage.delete({ where: { id: imageId } });
-
-  try {
-    const key = getR2KeyFromUrl(image.url);
-    if (key) {
-      await getR2Client().send(
-        new DeleteObjectCommand({ Bucket: getR2Bucket(), Key: key })
-      );
-    }
-  } catch {
-    // Si falla R2 borramos igualmente de la BD
-  }
+  if (!deleted) return;
 
   revalidatePath(`/catalogo/${partId}`);
   revalidatePath(`/catalogo/${partId}/editar`);

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-guard";
+import { getAuditActor } from "@/lib/audit";
 import {
   deleteUploadedImages,
   getImageFiles,
@@ -29,7 +30,7 @@ const createPartSchema = z.object({
 });
 
 export async function createPart(formData: FormData) {
-  await requireAuth();
+  const actor = getAuditActor(await requireAuth());
 
   const raw = {
     description: String(formData.get("description") ?? ""),
@@ -49,15 +50,36 @@ export async function createPart(formData: FormData) {
   let part;
 
   try {
-    part = await prisma.part.create({
-      data: {
-        description: parsed.data.description,
-        familyId: parsed.data.familyId,
-        priceCents,
-        images: {
-          create: uploaded.map(({ url }) => ({ url })),
+    part = await prisma.$transaction(async (transaction) => {
+      const createdPart = await transaction.part.create({
+        data: {
+          description: parsed.data.description,
+          familyId: parsed.data.familyId,
+          priceCents,
+          images: {
+            create: uploaded.map(({ url }) => ({ url })),
+          },
         },
-      },
+      });
+
+      await transaction.auditLog.create({
+        data: {
+          actorUserId: actor.userId,
+          actorEmail: actor.email,
+          action: "CREATE",
+          entityType: "PART",
+          entityId: createdPart.id,
+          summary: `Pieza creada: ${createdPart.description}`,
+          changes: {
+            description: createdPart.description,
+            familyId: createdPart.familyId,
+            priceCents: createdPart.priceCents,
+            imageCount: uploaded.length,
+          },
+        },
+      });
+
+      return createdPart;
     });
   } catch (error) {
     await deleteUploadedImages(uploaded);

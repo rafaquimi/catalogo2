@@ -46,10 +46,6 @@ async function recordFailedAttempt(email: string, ip: string) {
   await prisma.loginAttempt.create({ data: { email, ip } });
 }
 
-async function clearAttempts(email: string, ip: string) {
-  await prisma.loginAttempt.deleteMany({ where: { email, ip } });
-}
-
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
@@ -100,8 +96,21 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Login correcto: limpiar intentos fallidos
-        await clearAttempts(email, ip);
+        // Login correcto: limpiar intentos fallidos y registrar el acceso.
+        await prisma.$transaction(async (transaction) => {
+          await transaction.loginAttempt.deleteMany({ where: { email, ip } });
+          await transaction.auditLog.create({
+            data: {
+              actorUserId: user.id,
+              actorEmail: user.email,
+              action: "LOGIN",
+              entityType: "SESSION",
+              entityId: user.id,
+              summary: "Inicio de sesión correcto",
+              changes: { ip },
+            },
+          });
+        });
         return { id: user.id, email: user.email };
       },
     }),

@@ -26,7 +26,7 @@ export default async function CatalogoLayout({
             </Link>
             <span className="hidden sm:block text-xs text-blue-300">{session.user?.email}</span>
           </div>
-          <nav className="flex items-center gap-2">
+          <nav className="flex flex-wrap items-center justify-end gap-2">
             <Link
               className="rounded-lg bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20 transition-colors"
               href="/catalogo/nueva"
@@ -44,6 +44,12 @@ export default async function CatalogoLayout({
               href="/catalogo/cuenta"
             >
               Cuenta
+            </Link>
+            <Link
+              className="rounded-lg bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20 transition-colors"
+              href="/catalogo/actividad"
+            >
+              Actividad
             </Link>
             <SignOutButton />
           </nav>
