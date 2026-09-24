@@ -28,3 +28,14 @@ body {
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button, a { touch-action: manipulation; }
 ::selection { background: #67e8f9; color: #082f49; }
+
+/* Evita que iOS superponga la isla dinámica o la barra de estado sobre los controles. */
+.mobile-safe-header {
+  height: calc(4rem + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
+}
+
+.mobile-safe-panel {
+  padding-top: calc(1.25rem + env(safe-area-inset-top));
+  padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
+}
