@@ -22,6 +22,11 @@
     "sharp": "^0.35.4",
     "zod": "^4.6.5"
   },
+  "overrides": {
+    "prisma": {
+      "mysql2": "3.23.1"
+    }
+  },
   "optionalDependencies": {
     "@img/sharp-linux-arm64": "*",
     "@img/sharp-linux-x64": "*"
