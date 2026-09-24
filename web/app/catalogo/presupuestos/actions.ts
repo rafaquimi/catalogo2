@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-guard";
@@ -26,7 +25,7 @@ const quoteSchema = z.object({
   items: z.array(itemSchema).min(1).max(100),
 });
 
-export interface QuoteActionResult { ok: boolean; error?: string }
+export interface QuoteActionResult { ok: boolean; error?: string; quoteId?: string }
 
 export async function createQuote(input: unknown): Promise<QuoteActionResult> {
   const actor = getAuditActor(await requireAuth());
@@ -107,7 +106,7 @@ export async function createQuote(input: unknown): Promise<QuoteActionResult> {
   }
 
   revalidatePath("/catalogo/presupuestos");
-  redirect(`/catalogo/presupuestos/${quoteId}`);
+  return { ok: true, quoteId };
 }
 
 const allowedStatuses = ["DRAFT", "SENT", "ACCEPTED", "REJECTED", "EXPIRED"] as const;

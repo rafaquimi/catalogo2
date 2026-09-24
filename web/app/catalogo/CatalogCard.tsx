@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useQuoteDraft } from "./QuoteDraftContext";
 
 interface Props {
   id: string;
@@ -14,6 +15,8 @@ interface Props {
 
 export function CatalogCard({ id, description, family, price, images }: Props) {
   const [current, setCurrent] = useState(0);
+  const { addPart, quantities } = useQuoteDraft();
+  const selectedQuantity = quantities[id] || 0;
 
   function prev(e: React.MouseEvent) {
     e.preventDefault();
@@ -100,7 +103,7 @@ export function CatalogCard({ id, description, family, price, images }: Props) {
        </Link>
        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
         <Link href={`/catalogo/${id}`} className="text-xs font-semibold text-slate-500 hover:text-blue-600">Ver detalles</Link>
-        <Link href={`/catalogo/presupuestos/nuevo?pieza=${id}`} className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 dark:bg-cyan-500 dark:text-slate-950">+ Presupuesto</Link>
+        <button type="button" onClick={() => addPart(id)} className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${selectedQuantity ? "bg-cyan-100 text-cyan-800 hover:bg-cyan-200 dark:bg-cyan-500 dark:text-slate-950" : "bg-slate-950 text-white hover:bg-blue-700 dark:bg-cyan-500 dark:text-slate-950"}`}>{selectedQuantity ? `Añadida · ${selectedQuantity}` : "+ Añadir"}</button>
        </div>
       </div>
     </div>

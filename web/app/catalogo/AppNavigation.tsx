@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
+import { useQuoteDraft } from "./QuoteDraftContext";
 
 type IconName = "catalog" | "quotes" | "plus" | "family" | "activity" | "settings" | "account" | "menu" | "logout";
 
@@ -38,11 +39,12 @@ const management = [
 export function AppNavigation({ email }: { email?: string | null }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { itemCount } = useQuoteDraft();
   const active = (href: string, exact?: boolean) => exact ? pathname === href : pathname.startsWith(href);
 
   const navLink = (item: (typeof primary)[number] | (typeof management)[number]) => (
     <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${active(item.href, "exact" in item && item.exact) ? "bg-cyan-400/15 text-cyan-200 ring-1 ring-cyan-300/15" : "text-slate-300 hover:bg-white/7 hover:text-white"}`}>
-      <Icon name={item.icon} />{item.label}
+      <Icon name={item.icon} />{item.label}{item.href === "/catalogo/presupuestos" && itemCount > 0 ? <span className="ml-auto rounded-full bg-cyan-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">{itemCount}</span> : null}
     </Link>
   );
 
@@ -57,7 +59,7 @@ export function AppNavigation({ email }: { email?: string | null }) {
         </div>
         <div className="flex-1 space-y-7 overflow-y-auto px-4 py-5">
           <nav className="space-y-1">{primary.map(navLink)}</nav>
-          <Link href="/catalogo/presupuestos/nuevo" className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-950/40 transition hover:brightness-110"><Icon name="plus" />Nuevo presupuesto</Link>
+          <Link href="/catalogo/presupuestos/nuevo" className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-950/40 transition hover:brightness-110"><Icon name="plus" />{itemCount > 0 ? `Continuar presupuesto (${itemCount})` : "Nuevo presupuesto"}</Link>
           <div><p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Gestión</p><nav className="space-y-1">{management.map(navLink)}</nav></div>
         </div>
         <div className="border-t border-white/10 p-4">
@@ -75,7 +77,7 @@ export function AppNavigation({ email }: { email?: string | null }) {
 
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-slate-200 bg-white/95 px-3 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_30px_rgba(15,23,42,.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95 lg:hidden">
         {[primary[0], primary[1]].map((item) => <Link key={item.href} href={item.href} className={`flex flex-col items-center gap-1 py-1 text-[11px] font-medium ${active(item.href, item.exact) ? "text-blue-600 dark:text-cyan-300" : "text-slate-500"}`}><Icon name={item.icon} className="h-5 w-5"/>{item.label}</Link>)}
-        <Link href="/catalogo/presupuestos/nuevo" className="flex flex-col items-center gap-1 py-1 text-[11px] font-semibold text-blue-600 dark:text-cyan-300"><span className="-mt-5 grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-700 text-white shadow-lg shadow-blue-500/30"><Icon name="plus"/></span>Nuevo</Link>
+        <Link href="/catalogo/presupuestos/nuevo" className="flex flex-col items-center gap-1 py-1 text-[11px] font-semibold text-blue-600 dark:text-cyan-300"><span className="relative -mt-5 grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-700 text-white shadow-lg shadow-blue-500/30"><Icon name="plus"/>{itemCount > 0 ? <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-cyan-300 px-1 text-[10px] font-black text-slate-950 ring-2 ring-white dark:ring-slate-950">{itemCount}</span> : null}</span>{itemCount > 0 ? "Continuar" : "Nuevo"}</Link>
       </nav>
     </>
   );

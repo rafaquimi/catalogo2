@@ -1,25 +1,31 @@
 "use client";
 
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { createQuote } from "../actions";
 import { formatMoney } from "@/lib/quote-calculations";
+import { useQuoteDraft } from "../../QuoteDraftContext";
 
-interface Part { id: string; description: string; priceCents: number; family: string }
+interface Part { id: string; description: string; priceCents: number; family: string; imageUrl: string | null }
 interface Customer { id: string; name: string; phone: string; email: string | null }
 interface Line extends Part { quantity: number; discountBps: number }
 
 const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-900";
 
 export function QuoteBuilder({ parts, customers, validityDays, initialPartId }: { parts: Part[]; customers: Customer[]; validityDays: number; initialPartId?: string }) {
+  const router = useRouter();
+  const draft = useQuoteDraft();
   const [query, setQuery] = useState("");
   const [customerId, setCustomerId] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [lines, setLines] = useState<Line[]>(() => {
-    const part = parts.find(p => p.id === initialPartId);
-    return part ? [{ ...part, quantity: 1, discountBps: 0 }] : [];
+    const selected = parts.filter(part => (draft.quantities[part.id] || 0) > 0).map(part => ({ ...part, quantity: draft.quantities[part.id], discountBps: 0 }));
+    const initial = parts.find(part => part.id === initialPartId);
+    if (initial && !selected.some(line => line.id === initial.id)) selected.push({ ...initial, quantity: 1, discountBps: 0 });
+    return selected;
   });
   const [notes, setNotes] = useState("");
   const [days, setDays] = useState(validityDays);
@@ -37,7 +43,9 @@ export function QuoteBuilder({ parts, customers, validityDays, initialPartId }: 
   }
 
   function addPart(part: Part) {
-    setLines(current => current.some(line => line.id === part.id) ? current.map(line => line.id === part.id ? { ...line, quantity: line.quantity + 1 } : line) : [...current, { ...part, quantity: 1, discountBps: 0 }]);
+    const nextQuantity = (lines.find(line => line.id === part.id)?.quantity || 0) + 1;
+    setLines(current => current.some(line => line.id === part.id) ? current.map(line => line.id === part.id ? { ...line, quantity: nextQuantity } : line) : [...current, { ...part, quantity: 1, discountBps: 0 }]);
+    draft.setQuantity(part.id, nextQuantity);
   }
 
   function submit() {
@@ -49,8 +57,11 @@ export function QuoteBuilder({ parts, customers, validityDays, initialPartId }: 
           validityDays: days, notes,
           items: lines.map(line => ({ partId: line.id, description: line.description, quantity: line.quantity, unitPriceCents: line.priceCents, discountBps: line.discountBps })),
         });
-        if (!result.ok) setError(result.error || "No se ha podido guardar.");
-      } catch (err) { if (isRedirectError(err)) throw err; setError("No se ha podido guardar el presupuesto."); }
+        if (!result.ok || !result.quoteId) { setError(result.error || "No se ha podido guardar."); return; }
+        draft.clearDraft();
+        router.push(`/catalogo/presupuestos/${result.quoteId}`);
+        router.refresh();
+      } catch { setError("No se ha podido guardar el presupuesto."); }
     });
   }
 
@@ -63,10 +74,10 @@ export function QuoteBuilder({ parts, customers, validityDays, initialPartId }: 
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
-        <div className="mb-5 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-cyan-50 font-bold text-cyan-700 dark:bg-cyan-950">2</span><div><h2 className="font-semibold">Piezas</h2><p className="text-xs text-slate-500">Busca y añade las piezas del presupuesto</p></div></div>
+        <div className="mb-5 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-cyan-50 font-bold text-cyan-700 dark:bg-cyan-950">2</span><div className="min-w-0 flex-1"><h2 className="font-semibold">Piezas</h2><p className="text-xs text-slate-500">Busca y añade las piezas del presupuesto</p></div>{lines.length > 0 ? <button type="button" onClick={() => { setLines([]); draft.clearDraft(); }} className="shrink-0 rounded-lg px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950/30">Vaciar selección</button> : null}</div>
         <input value={query} onChange={e => setQuery(e.target.value)} className={inputClass} placeholder="Buscar por nombre o familia…"/>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">{filtered.map(part => <button key={part.id} type="button" onClick={() => addPart(part)} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-3 text-left transition hover:border-blue-300 hover:bg-blue-50/60 dark:border-slate-700 dark:hover:bg-blue-950/20"><span><span className="block text-sm font-medium">{part.description}</span><span className="text-xs text-slate-500">{part.family}</span></span><span className="shrink-0 text-sm font-bold text-blue-700 dark:text-cyan-300">{formatMoney(part.priceCents)} +</span></button>)}</div>
-        <div className="mt-5 space-y-3">{lines.length === 0 ? <div className="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-400 dark:border-slate-700">Todavía no has añadido ninguna pieza.</div> : lines.map((line, index) => <div key={line.id} className="grid gap-3 rounded-xl bg-slate-50 p-4 dark:bg-slate-950 sm:grid-cols-[1fr_90px_130px_90px_36px] sm:items-end"><div><span className="text-xs text-slate-400">Pieza</span><p className="text-sm font-medium">{line.description}</p></div><div><label className="text-xs text-slate-500">Cantidad</label><input type="number" min="1" value={line.quantity} onChange={e => setLines(v => v.map((x,i) => i === index ? {...x,quantity:Number(e.target.value)} : x))} className={inputClass}/></div><div><label className="text-xs text-slate-500">Precio IVA incl.</label><input inputMode="decimal" value={(line.priceCents/100).toFixed(2).replace(".",",")} onChange={e => { const cents=Math.round(Number(e.target.value.replace(",","."))*100); if(Number.isFinite(cents)) setLines(v => v.map((x,i)=>i===index?{...x,priceCents:cents}:x)); }} className={inputClass}/></div><div><label className="text-xs text-slate-500">Dto. %</label><input type="number" min="0" max="100" value={line.discountBps/100} onChange={e => setLines(v => v.map((x,i)=>i===index?{...x,discountBps:Math.round(Number(e.target.value)*100)}:x))} className={inputClass}/></div><button type="button" onClick={() => setLines(v => v.filter((_,i)=>i!==index))} className="grid h-10 w-10 place-items-center rounded-lg text-xl text-red-500 hover:bg-red-50">×</button></div>)}</div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">{filtered.map(part => <button key={part.id} type="button" onClick={() => addPart(part)} className="flex items-center gap-3 overflow-hidden rounded-xl border border-slate-200 p-2 text-left transition hover:border-blue-300 hover:bg-blue-50/60 dark:border-slate-700 dark:hover:bg-blue-950/20"><span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">{part.imageUrl ? <Image src={part.imageUrl} alt={part.description} fill unoptimized className="object-cover" sizes="64px" /> : <span className="grid h-full place-items-center text-[10px] text-slate-400">Sin foto</span>}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{part.description}</span><span className="block text-xs text-slate-500">{part.family}</span><span className="mt-1 block text-sm font-bold text-blue-700 dark:text-cyan-300">{formatMoney(part.priceCents)}</span></span><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-950 font-bold text-white dark:bg-cyan-400 dark:text-slate-950">+</span></button>)}</div>
+        <div className="mt-5 space-y-3">{lines.length === 0 ? <div className="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-400 dark:border-slate-700">Todavía no has añadido ninguna pieza.</div> : lines.map((line, index) => <div key={line.id} className="grid gap-3 rounded-xl bg-slate-50 p-4 dark:bg-slate-950 sm:grid-cols-[56px_1fr_90px_130px_90px_36px] sm:items-end"><div className="relative hidden h-14 w-14 overflow-hidden rounded-lg bg-slate-200 sm:block">{line.imageUrl?<Image src={line.imageUrl} alt={line.description} fill unoptimized className="object-cover" sizes="56px"/>:null}</div><div><span className="text-xs text-slate-400">Pieza</span><p className="text-sm font-medium">{line.description}</p></div><div><label className="text-xs text-slate-500">Cantidad</label><input type="number" min="1" value={line.quantity} onChange={e => { const quantity=Math.max(1,Number(e.target.value)); setLines(v => v.map((x,i) => i === index ? {...x,quantity} : x)); draft.setQuantity(line.id,quantity); }} className={inputClass}/></div><div><label className="text-xs text-slate-500">Precio IVA incl.</label><input inputMode="decimal" value={(line.priceCents/100).toFixed(2).replace(".",",")} onChange={e => { const cents=Math.round(Number(e.target.value.replace(",","."))*100); if(Number.isFinite(cents)) setLines(v => v.map((x,i)=>i===index?{...x,priceCents:cents}:x)); }} className={inputClass}/></div><div><label className="text-xs text-slate-500">Dto. %</label><input type="number" min="0" max="100" value={line.discountBps/100} onChange={e => setLines(v => v.map((x,i)=>i===index?{...x,discountBps:Math.round(Number(e.target.value)*100)}:x))} className={inputClass}/></div><button type="button" onClick={() => { setLines(v => v.filter((_,i)=>i!==index)); draft.removePart(line.id); }} className="grid h-10 w-10 place-items-center rounded-lg text-xl text-red-500 hover:bg-red-50">×</button></div>)}</div>
       </section>
     </div>
 
