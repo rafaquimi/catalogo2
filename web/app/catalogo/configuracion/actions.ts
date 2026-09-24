@@ -71,6 +71,10 @@ export async function testSmtpConnection():Promise<SettingsResult>{
    return{ok:true};
  }catch(error){
    console.error("Error verificando SMTP",error);
-   return{ok:false,error:"No se ha podido conectar. Revisa servidor, puerto, cifrado, usuario y contraseña."};
+   const smtpError=error as Error&{code?:string;responseCode?:number};
+   if(smtpError.code==="EAUTH"||smtpError.responseCode===535)return{ok:false,error:"Gmail ha rechazado el usuario o la contraseña. Usa una contraseña de aplicación de Google, no la contraseña normal."};
+   if(smtpError.code==="ETIMEDOUT"||smtpError.code==="ESOCKET")return{ok:false,error:"El servidor SMTP no ha respondido. Comprueba el puerto y el tipo de cifrado."};
+   if(smtpError.code==="EDNS")return{ok:false,error:"No se encuentra el servidor SMTP. Comprueba el nombre smtp.gmail.com."};
+   return{ok:false,error:`No se ha podido conectar con Gmail${smtpError.code?` (${smtpError.code})`:""}.`};
  }
 }
