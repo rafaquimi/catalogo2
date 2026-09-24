@@ -104,6 +104,20 @@ model CompanySettings {
   updatedAt           DateTime @updatedAt
 }
 
+// Credenciales SMTP cifradas. La aplicación utiliza una sola fila.
+model EmailSettings {
+  id                    String   @id @default("default")
+  enabled               Boolean  @default(false)
+  host                  String   @default("")
+  port                  Int      @default(587)
+  secure                Boolean  @default(false)
+  user                  String   @default("")
+  passwordEncrypted     String?
+  fromAddress           String   @default("")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
 model Customer {
   id        String   @id @default(cuid())
   name      String

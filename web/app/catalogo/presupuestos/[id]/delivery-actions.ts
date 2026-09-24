@@ -1,11 +1,11 @@
 "use server";
 
-import nodemailer from "nodemailer";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth-guard";
 import { getAuditActor } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { generateQuotePdf } from "@/lib/quote-pdf";
+import { createSmtpTransport, getSmtpConfig } from "@/lib/smtp";
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] || character);
@@ -13,21 +13,16 @@ function escapeHtml(value: string) {
 
 export async function sendQuoteEmail(id: string): Promise<{ok:boolean;error?:string}> {
   const actor = getAuditActor(await requireAuth());
-  const required = ["SMTP_HOST","SMTP_USER","SMTP_PASSWORD","SMTP_FROM"] as const;
-  if (required.some(key => !process.env[key])) return { ok:false, error:"El envío por email aún no está configurado en Vercel." };
+  const smtp = await getSmtpConfig();
+  if (!smtp) return { ok:false, error:"Configura el correo en Empresa y PDF antes de enviar." };
   const quote = await prisma.quote.findUnique({ where:{id} });
   if (!quote?.customerEmail) return { ok:false, error:"Este cliente no tiene dirección de email." };
 
   try {
     const { bytes } = await generateQuotePdf(id);
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: process.env.SMTP_SECURE === "true",
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
-    });
+    const transporter = createSmtpTransport(smtp);
     await transporter.sendMail({
-      from: process.env.SMTP_FROM,
+      from: smtp.from,
       to: quote.customerEmail,
       subject: `Presupuesto ${quote.number}`,
       text: `Hola ${quote.customerName}, adjuntamos el presupuesto ${quote.number}.`,
