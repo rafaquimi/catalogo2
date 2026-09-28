@@ -27,6 +27,10 @@ export default async function PiezaDetallePage({
 
   if (!part) notFound();
 
+  const marginPercent = part.costCents > 0
+    ? Math.max(0, ((part.priceCents / 1.21) / part.costCents - 1) * 100)
+    : null;
+
   return (
     <div className="space-y-6">
       {/* Cabecera */}
@@ -36,11 +40,23 @@ export default async function PiezaDetallePage({
             <span className="inline-block rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
               {part.family.name}
             </span>
+            {part.reference ? <p className="font-mono text-sm font-semibold text-slate-500">Ref. {part.reference}</p> : null}
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
               {part.description}
             </h1>
-            <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
-              {formatPrice(part.priceCents)}
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl bg-amber-50 px-4 py-3 dark:bg-amber-950/30">
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">Coste sin IVA</p>
+                <p className="mt-1 text-xl font-bold text-amber-900 dark:text-amber-100">{formatPrice(part.costCents)}</p>
+              </div>
+              <div className="rounded-xl bg-slate-100 px-4 py-3 dark:bg-slate-800">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Recargo</p>
+                <p className="mt-1 text-xl font-bold">{marginPercent === null ? "Sin calcular" : `${marginPercent.toFixed(2).replace(".", ",")}%`}</p>
+              </div>
+              <div className="rounded-xl bg-blue-50 px-4 py-3 dark:bg-blue-950/30">
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-300">PVP IVA incluido</p>
+                <p className="mt-1 text-xl font-bold text-blue-700 dark:text-blue-300">{formatPrice(part.priceCents)}</p>
+              </div>
             </div>
           </div>
           <div className="flex gap-2 shrink-0">
