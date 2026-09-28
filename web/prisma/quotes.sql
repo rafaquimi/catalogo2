@@ -1,6 +1,7 @@
 -- Ejecutar una sola vez en Supabase > SQL Editor antes de desplegar presupuestos.
 CREATE TABLE IF NOT EXISTS public."CompanySettings" (
   "id" TEXT NOT NULL,
+  "tradeName" TEXT NOT NULL DEFAULT '',
   "businessName" TEXT NOT NULL DEFAULT '',
   "taxId" TEXT NOT NULL DEFAULT '',
   "address" TEXT NOT NULL DEFAULT '',
