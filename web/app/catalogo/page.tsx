@@ -25,7 +25,7 @@ export default async function CatalogoPage() {
     id: p.id,
     reference: p.reference,
     description: p.description,
-    family: p.family.name,
+    family: p.family?.name ?? "Sin familia",
     familyId: p.familyId,
     costCents: p.costCents,
     cost: formatPrice(p.costCents),
