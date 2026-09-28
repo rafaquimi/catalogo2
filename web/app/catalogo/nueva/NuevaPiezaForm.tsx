@@ -8,6 +8,7 @@ import {
   MAX_IMAGES_PER_PART,
   validateImageFile,
 } from "@/lib/image-rules";
+import { PriceFields } from "../PriceFields";
 
 interface Props {
   families: { id: string; name: string }[];
@@ -78,15 +79,9 @@ export function NuevaPiezaForm({ families }: Props) {
       className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
     >
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <div className="sm:col-span-2 space-y-1.5">
-          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Descripción</label>
-          <textarea
-            name="description"
-            required
-            rows={3}
-            className={inputClass}
-            placeholder="Describe la pieza…"
-          />
+        <div className="space-y-1.5">
+          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Referencia <span className="font-normal text-slate-400">(opcional)</span></label>
+          <input name="reference" maxLength={100} className={inputClass} placeholder="Ej: REF-001" />
         </div>
 
         <div className="space-y-1.5">
@@ -105,16 +100,18 @@ export function NuevaPiezaForm({ families }: Props) {
           </select>
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Precio (EUR)</label>
-          <input
-            name="price"
+        <div className="sm:col-span-2 space-y-1.5">
+          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Descripción</label>
+          <textarea
+            name="description"
             required
-            inputMode="decimal"
-            placeholder="Ej: 12,50"
+            rows={3}
             className={inputClass}
+            placeholder="Describe la pieza…"
           />
         </div>
+
+        <PriceFields inputClass={inputClass} />
 
         {/* Fotos */}
         <div className="sm:col-span-2 space-y-3">
