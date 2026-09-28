@@ -38,7 +38,7 @@ export default async function PiezaDetallePage({
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
             <span className="inline-block rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-              {part.family.name}
+              {part.family?.name ?? "Sin familia"}
             </span>
             {part.reference ? <p className="font-mono text-sm font-semibold text-slate-500">Ref. {part.reference}</p> : null}
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
