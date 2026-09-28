@@ -14,8 +14,20 @@ import {
 } from "@/lib/image-storage";
 
 const createPartSchema = z.object({
+  reference: z.string().trim().max(100),
   description: z.string().trim().min(1).max(500),
   familyId: z.string().min(1),
+  cost: z
+    .string()
+    .min(1)
+    .transform((v, ctx) => {
+      const n = parseFloat(v.replace(",", "."));
+      if (isNaN(n) || n < 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Coste inválido" });
+        return z.NEVER;
+      }
+      return n;
+    }),
   price: z
     .string()
     .min(1)
@@ -33,8 +45,10 @@ export async function createPart(formData: FormData) {
   const actor = getAuditActor(await requireAuth());
 
   const raw = {
+    reference: String(formData.get("reference") ?? ""),
     description: String(formData.get("description") ?? ""),
     familyId: String(formData.get("familyId") ?? ""),
+    cost: String(formData.get("cost") ?? ""),
     price: String(formData.get("price") ?? ""),
   };
 
@@ -45,6 +59,7 @@ export async function createPart(formData: FormData) {
   validateImageFiles(files);
 
   const priceCents = Math.round(parsed.data.price * 100);
+  const costCents = Math.round(parsed.data.cost * 100);
 
   const uploaded = await uploadImages(files);
   let part;
@@ -53,8 +68,10 @@ export async function createPart(formData: FormData) {
     part = await prisma.$transaction(async (transaction) => {
       const createdPart = await transaction.part.create({
         data: {
+          reference: parsed.data.reference || null,
           description: parsed.data.description,
           familyId: parsed.data.familyId,
+          costCents,
           priceCents,
           images: {
             create: uploaded.map(({ url }) => ({ url })),
@@ -72,7 +89,9 @@ export async function createPart(formData: FormData) {
           summary: `Pieza creada: ${createdPart.description}`,
           changes: {
             description: createdPart.description,
+            reference: createdPart.reference,
             familyId: createdPart.familyId,
+            costCents: createdPart.costCents,
             priceCents: createdPart.priceCents,
             imageCount: uploaded.length,
           },

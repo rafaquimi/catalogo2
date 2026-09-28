@@ -57,29 +57,31 @@ export async function generateQuotePdf(quoteId: string) {
   }
   let page = doc.addPage([A4.width, A4.height]);
   let y = A4.height - 45;
+  const displayName = company.tradeName || company.businessName || "Catálogo Pro";
 
   const header = () => {
-    page.drawRectangle({ x: 0, y: A4.height - 125, width: A4.width, height: 125, color: navy });
+    page.drawRectangle({ x: 0, y: A4.height - 145, width: A4.width, height: 145, color: navy });
     let companyX = 45;
     if (logoImage) {
-      const scale = Math.min(72 / logoImage.width, 44 / logoImage.height);
-      page.drawImage(logoImage, { x: 45, y: A4.height - 83, width: logoImage.width * scale, height: logoImage.height * scale });
-      companyX = 130;
+      const scale = Math.min(105 / logoImage.width, 66 / logoImage.height);
+      page.drawImage(logoImage, { x: 45, y: A4.height - 110, width: logoImage.width * scale, height: logoImage.height * scale });
+      companyX = 165;
     }
-    drawText(page, company.businessName || "Catálogo Pro", companyX, A4.height - 52, bold, 20, rgb(1,1,1));
-    const contact = [company.taxId, company.address, [company.postalCode, company.city, company.province].filter(Boolean).join(" "), company.phone, company.email].filter(Boolean);
-    contact.slice(0,4).forEach((line, i) => drawText(page, line, companyX, A4.height - 73 - i*13, regular, 8.5, rgb(.72,.78,.86)));
-    drawText(page, "PRESUPUESTO", 395, A4.height - 50, bold, 12, cyan);
-    drawText(page, quote.number, 395, A4.height - 75, bold, 15, rgb(1,1,1));
-    drawText(page, `Fecha: ${date(quote.issueDate)}`, 395, A4.height - 95, regular, 8.5, rgb(.72,.78,.86));
-    drawText(page, `Válido hasta: ${date(quote.validUntil)}`, 395, A4.height - 109, regular, 8.5, rgb(.72,.78,.86));
-    y = A4.height - 160;
+    drawText(page, displayName, companyX, A4.height - 42, bold, logoImage ? 17 : 20, rgb(1,1,1));
+    const fiscalName = company.businessName && company.businessName !== displayName ? `Razón social: ${company.businessName}` : "";
+    const contact = [fiscalName, company.taxId ? `CIF/NIF: ${company.taxId}` : "", company.address, [company.postalCode, company.city, company.province].filter(Boolean).join(" "), company.phone, company.email].filter(Boolean);
+    contact.slice(0,5).forEach((line, i) => drawText(page, line, companyX, A4.height - 61 - i*12, regular, 7.8, rgb(.72,.78,.86)));
+    drawText(page, "PRESUPUESTO", 420, A4.height - 42, bold, 11, cyan);
+    drawText(page, quote.number, 420, A4.height - 65, bold, 13, rgb(1,1,1));
+    drawText(page, `Fecha: ${date(quote.issueDate)}`, 420, A4.height - 86, regular, 8, rgb(.72,.78,.86));
+    drawText(page, `Válido hasta: ${date(quote.validUntil)}`, 420, A4.height - 100, regular, 8, rgb(.72,.78,.86));
+    y = A4.height - 180;
   };
   const tableHeader = () => {
     page.drawRectangle({ x: 42, y: y - 5, width: 511, height: 25, color: navy });
     drawText(page, "DESCRIPCIÓN", 52, y + 3, bold, 8, rgb(1,1,1));
     drawText(page, "CANT.", 338, y + 3, bold, 8, rgb(1,1,1));
-    drawText(page, "PRECIO", 397, y + 3, bold, 8, rgb(1,1,1));
+    drawText(page, "PVP IVA INCL.", 387, y + 3, bold, 7.2, rgb(1,1,1));
     drawText(page, "DTO.", 470, y + 3, bold, 8, rgb(1,1,1));
     drawText(page, "TOTAL", 515, y + 3, bold, 8, rgb(1,1,1));
     y -= 20;
@@ -110,15 +112,11 @@ export async function generateQuotePdf(quoteId: string) {
   });
 
   if (y < 235) { page = doc.addPage([A4.width,A4.height]); y=A4.height-70; }
-  const boxY = y - 112;
-  page.drawRectangle({ x: 350, y: boxY, width: 203, height: 112, color: navy });
-  drawText(page, "Base imponible", 368, y-24, regular, 9, rgb(.72,.78,.86));
-  drawText(page, money(quote.taxBaseCents), 535-bold.widthOfTextAtSize(money(quote.taxBaseCents),9), y-24, bold, 9, rgb(1,1,1));
-  drawText(page, `IVA incluido (${(quote.taxRateBps/100).toFixed(0)}%)`, 368, y-48, regular, 9, rgb(.72,.78,.86));
-  drawText(page, money(quote.taxCents), 535-bold.widthOfTextAtSize(money(quote.taxCents),9), y-48, bold, 9, rgb(1,1,1));
-  page.drawLine({ start:{x:368,y:y-63}, end:{x:535,y:y-63}, thickness:1, color:rgb(.2,.3,.42) });
-  drawText(page, "TOTAL", 368, y-91, bold, 11, cyan);
-  drawText(page, money(quote.totalCents), 535-bold.widthOfTextAtSize(money(quote.totalCents),15), y-94, bold, 15, rgb(1,1,1));
+  const boxY = y - 72;
+  page.drawRectangle({ x: 350, y: boxY, width: 203, height: 72, color: navy });
+  drawText(page, "TOTAL PVP", 368, y-27, bold, 10, cyan);
+  drawText(page, "IVA INCLUIDO", 368, y-43, regular, 7.5, rgb(.72,.78,.86));
+  drawText(page, money(quote.totalCents), 535-bold.widthOfTextAtSize(money(quote.totalCents),15), y-38, bold, 15, rgb(1,1,1));
   if (quote.notes) {
     drawText(page,"NOTAS Y CONDICIONES",45,y-22,bold,8,blue);
     wrap(quote.notes,regular,8.5,270).slice(0,7).forEach((line,i)=>drawText(page,line,45,y-40-i*12,regular,8.5,slate));
@@ -126,8 +124,11 @@ export async function generateQuotePdf(quoteId: string) {
 
   const pages = doc.getPages();
   pages.forEach((p,i)=>{
+    if (i === pages.length - 1) {
+      drawText(p, "Todos los precios indicados son PVP e incluyen el 21% de IVA.", 42, 49, regular, 7, slate);
+    }
     p.drawLine({start:{x:42,y:38},end:{x:553,y:38},thickness:.7,color:rgb(.85,.88,.92)});
-    drawText(p, `${company.businessName || "Catálogo Pro"} · Presupuesto ${quote.number}`, 42, 23, regular, 7.5, slate);
+    drawText(p, `${displayName} · Presupuesto ${quote.number}`, 42, 23, regular, 7.5, slate);
     const num=`Página ${i+1} de ${pages.length}`; drawText(p,num,553-regular.widthOfTextAtSize(num,7.5),23,regular,7.5,slate);
   });
   return { bytes: await doc.save(), quote };

@@ -30,7 +30,9 @@ model Family {
 
 model Part {
   id          String   @id @default(cuid())
+  reference   String?
   description String
+  costCents   Int      @default(0)
   priceCents  Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -87,6 +89,7 @@ model AuditLog {
 // Datos editables de la empresa emisora. La aplicación utiliza una sola fila.
 model CompanySettings {
   id                  String   @id @default("default")
+  tradeName           String   @default("")
   businessName        String   @default("")
   taxId               String   @default("")
   address             String   @default("")

@@ -17,6 +17,7 @@ export interface SettingsResult { ok:boolean; error?:string }
 
 const checkbox = z.preprocess(value => value === "on" || value === "true", z.boolean());
 const schema=z.object({
+  tradeName:z.string().trim().min(2).max(150),
   businessName:z.string().trim().min(2).max(150), taxId:z.string().trim().max(30), address:z.string().trim().max(200),
   postalCode:z.string().trim().max(15), city:z.string().trim().max(100), province:z.string().trim().max(100),
   phone:z.string().trim().max(30), email:z.union([z.literal(""),z.string().email()]), website:z.string().trim().max(200),

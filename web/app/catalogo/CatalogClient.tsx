@@ -5,9 +5,12 @@ import { CatalogCard } from "./CatalogCard";
 
 interface Part {
   id: string;
+  reference: string | null;
   description: string;
   family: string;
   familyId: string;
+  costCents: number;
+  cost: string;
   priceCents: number;
   price: string;
   images: { id: string; url: string }[];
@@ -24,6 +27,7 @@ export function CatalogClient({ parts, families }: Props) {
   const [query, setQuery] = useState("");
   const [familyId, setFamilyId] = useState("all");
   const [sort, setSort] = useState<SortOrder>("none");
+  const [showCost, setShowCost] = useState(false);
 
   const filtered = useMemo(() => {
     let result = parts;
@@ -34,17 +38,17 @@ export function CatalogClient({ parts, families }: Props) {
 
     if (query.trim()) {
       const q = query.toLowerCase();
-      result = result.filter((p) => p.description.toLowerCase().includes(q));
+      result = result.filter((p) => `${p.reference ?? ""} ${p.description}`.toLowerCase().includes(q));
     }
 
     if (sort === "asc") {
-      result = [...result].sort((a, b) => a.priceCents - b.priceCents);
+      result = [...result].sort((a, b) => (showCost ? a.costCents - b.costCents : a.priceCents - b.priceCents));
     } else if (sort === "desc") {
-      result = [...result].sort((a, b) => b.priceCents - a.priceCents);
+      result = [...result].sort((a, b) => (showCost ? b.costCents - a.costCents : b.priceCents - a.priceCents));
     }
 
     return result;
-  }, [parts, query, familyId, sort]);
+  }, [parts, query, familyId, sort, showCost]);
 
   const inputClass =
     "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-3 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900";
@@ -83,6 +87,14 @@ export function CatalogClient({ parts, families }: Props) {
           ))}
         </select>
 
+        <label className={`flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-sm font-semibold transition sm:min-w-52 ${showCost ? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200" : "border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"}`}>
+          <span>{showCost ? "Coste sin IVA" : "PVP IVA incluido"}</span>
+          <span className={`relative h-6 w-11 rounded-full transition ${showCost ? "bg-amber-500" : "bg-slate-300 dark:bg-slate-700"}`}>
+            <input type="checkbox" checked={showCost} onChange={event => setShowCost(event.target.checked)} className="sr-only" aria-label="Mostrar precio de coste" />
+            <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition ${showCost ? "left-6" : "left-1"}`} />
+          </span>
+        </label>
+
         {/* Ordenar por precio */}
         <select
           value={sort}
@@ -112,9 +124,12 @@ export function CatalogClient({ parts, families }: Props) {
               <CatalogCard
                 key={p.id}
                 id={p.id}
+                reference={p.reference}
                 description={p.description}
                 family={p.family}
-                price={p.price}
+                price={showCost ? p.cost : p.price}
+                priceLabel={showCost ? "Coste sin IVA" : "PVP IVA incluido"}
+                showCost={showCost}
                 images={p.images}
               />
             ))}

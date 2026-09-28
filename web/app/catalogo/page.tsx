@@ -23,9 +23,12 @@ export default async function CatalogoPage() {
 
   const serialized = parts.map((p) => ({
     id: p.id,
+    reference: p.reference,
     description: p.description,
     family: p.family.name,
     familyId: p.familyId,
+    costCents: p.costCents,
+    cost: formatPrice(p.costCents),
     priceCents: p.priceCents,
     price: formatPrice(p.priceCents),
     images: p.images.map((img) => ({
@@ -42,7 +45,7 @@ export default async function CatalogoPage() {
           <div>
             <p className="text-sm font-semibold text-cyan-300">Catálogo de piezas</p>
             <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">Todo tu catálogo, listo para presupuestar</h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-400">Busca una pieza, consulta sus fotos o añádela directamente a un nuevo presupuesto.</p>
+            <p className="mt-2 max-w-2xl text-sm text-slate-400">Busca una pieza, consulta su PVP con IVA incluido o activa la vista interna de costes.</p>
           </div>
           <div className="flex shrink-0 gap-2"><Link href="/catalogo/nueva" className="rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white hover:bg-white/15">Nueva pieza</Link><Link href="/catalogo/presupuestos/nuevo" className="rounded-xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-300">Nuevo presupuesto</Link></div>
         </div>
