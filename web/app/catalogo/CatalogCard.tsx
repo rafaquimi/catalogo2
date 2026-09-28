@@ -7,13 +7,16 @@ import { useQuoteDraft } from "./QuoteDraftContext";
 
 interface Props {
   id: string;
+  reference: string | null;
   description: string;
   family: string;
   price: string;
+  priceLabel: string;
+  showCost: boolean;
   images: { id: string; url: string }[];
 }
 
-export function CatalogCard({ id, description, family, price, images }: Props) {
+export function CatalogCard({ id, reference, description, family, price, priceLabel, showCost, images }: Props) {
   const [current, setCurrent] = useState(0);
   const { addPart, quantities } = useQuoteDraft();
   const selectedQuantity = quantities[id] || 0;
@@ -98,8 +101,12 @@ export function CatalogCard({ id, description, family, price, images }: Props) {
         <span className="inline-block rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
           {family}
         </span>
+        {reference ? <div className="font-mono text-xs font-semibold text-slate-500 dark:text-slate-400">Ref. {reference}</div> : null}
         <div className="text-sm font-medium text-slate-800 dark:text-slate-100 line-clamp-2">{description}</div>
-        <div className="text-base font-bold text-blue-700 dark:text-blue-400">{price}</div>
+        <div className={`mt-2 rounded-xl px-3 py-2 ${showCost ? "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300" : "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300"}`}>
+          <div className="text-[10px] font-semibold uppercase tracking-wide opacity-70">{priceLabel}</div>
+          <div className="text-base font-bold">{price}</div>
+        </div>
        </Link>
        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
         <Link href={`/catalogo/${id}`} className="text-xs font-semibold text-slate-500 hover:text-blue-600">Ver detalles</Link>
