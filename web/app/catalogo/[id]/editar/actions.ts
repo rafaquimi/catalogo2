@@ -17,7 +17,7 @@ import { MAX_IMAGES_PER_PART } from "@/lib/image-rules";
 const updatePartSchema = z.object({
   reference: z.string().trim().max(100),
   description: z.string().trim().min(1).max(500),
-  familyId: z.string().min(1),
+  familyId: z.string().transform((value) => value || null),
   cost: z.string().min(1).transform((v, ctx) => {
     const n = parseFloat(v.replace(",", "."));
     if (isNaN(n) || n < 0) {

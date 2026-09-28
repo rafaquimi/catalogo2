@@ -23,7 +23,7 @@ interface Props {
     description: string;
     costCents: number;
     priceCents: number;
-    familyId: string;
+    familyId: string | null;
     images: ExistingImage[];
   };
   families: { id: string; name: string }[];
@@ -131,9 +131,10 @@ export function EditarPiezaForm({ part, families }: Props) {
             <select
               name="familyId"
               required
-              defaultValue={part.familyId}
+              defaultValue={part.familyId ?? ""}
               className={inputClass}
             >
+              <option value="">Sin familia</option>
               {families.map((f) => (
                 <option key={f.id} value={f.id}>{f.name}</option>
               ))}
