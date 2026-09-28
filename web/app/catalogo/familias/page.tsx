@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { createFamily } from "./actions";
+import { FamilyRow } from "./FamilyRow";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export default async function FamiliasPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Familias</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Crea familias para clasificar tus piezas.
+          Crea, renombra o elimina familias. Si eliminas una familia, sus piezas se conservarán como “Sin familia”.
         </p>
       </div>
 
@@ -39,32 +40,17 @@ export default async function FamiliasPage() {
       </form>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="grid grid-cols-3 gap-0 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:bg-slate-800/50">
+        <div className="hidden grid-cols-[minmax(0,1fr)_6rem_auto] gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:bg-slate-800/50 sm:grid">
           <div>Familia</div>
           <div className="text-center">Piezas</div>
-          <div className="text-right">ID</div>
+          <div className="text-right">Acciones</div>
         </div>
         {families.length === 0 ? (
           <div className="px-5 py-8 text-center text-sm text-slate-400">
             No hay familias todavía.
           </div>
         ) : (
-          families.map((f) => (
-            <div
-              key={f.id}
-              className="grid grid-cols-3 items-center gap-0 border-b border-slate-100 px-5 py-3.5 text-sm last:border-b-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40"
-            >
-              <div className="font-medium text-slate-800 dark:text-slate-100">{f.name}</div>
-              <div className="text-center">
-                <span className="inline-flex items-center justify-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                  {f._count.parts}
-                </span>
-              </div>
-              <div className="text-right font-mono text-xs text-slate-400">
-                {f.id}
-              </div>
-            </div>
-          ))
+          families.map((family) => <FamilyRow key={family.id} family={{ id: family.id, name: family.name, partCount: family._count.parts }} />)
         )}
       </div>
     </div>

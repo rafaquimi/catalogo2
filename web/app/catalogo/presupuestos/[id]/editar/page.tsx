@@ -24,7 +24,7 @@ export default async function EditQuotePage({ params }: { params: Promise<{ id: 
       <p className="mt-1 text-sm text-slate-500">Se conservarán el número y el historial. Al guardar volverá a estado Borrador.</p>
     </div>
     <QuoteBuilder
-      parts={parts.map(part => ({ id: part.id, reference: part.reference, description: part.description, priceCents: part.priceCents, family: part.family.name, imageUrl: part.images[0] ? getPrivateImageUrl(part.images[0].id) : null }))}
+      parts={parts.map(part => ({ id: part.id, reference: part.reference, description: part.description, priceCents: part.priceCents, family: part.family?.name ?? "Sin familia", imageUrl: part.images[0] ? getPrivateImageUrl(part.images[0].id) : null }))}
       customers={customers.map(customer => ({ id: customer.id, name: customer.name, phone: customer.phone, email: customer.email }))}
       validityDays={settings.defaultValidityDays}
       initialQuote={{
