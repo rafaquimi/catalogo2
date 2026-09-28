@@ -15,8 +15,17 @@ import {
 import { MAX_IMAGES_PER_PART } from "@/lib/image-rules";
 
 const updatePartSchema = z.object({
+  reference: z.string().trim().max(100),
   description: z.string().trim().min(1).max(500),
   familyId: z.string().min(1),
+  cost: z.string().min(1).transform((v, ctx) => {
+    const n = parseFloat(v.replace(",", "."));
+    if (isNaN(n) || n < 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Coste inválido" });
+      return z.NEVER;
+    }
+    return n;
+  }),
   price: z.string().min(1).transform((v, ctx) => {
     const n = parseFloat(v.replace(",", "."));
     if (isNaN(n) || n < 0) {
@@ -31,8 +40,10 @@ export async function updatePart(id: string, formData: FormData) {
   const actor = getAuditActor(await requireAuth());
 
   const raw = {
+    reference: String(formData.get("reference") ?? ""),
     description: String(formData.get("description") ?? ""),
     familyId: String(formData.get("familyId") ?? ""),
+    cost: String(formData.get("cost") ?? ""),
     price: String(formData.get("price") ?? ""),
   };
 
@@ -49,13 +60,15 @@ export async function updatePart(id: string, formData: FormData) {
     await prisma.$transaction(async (transaction) => {
       const previous = await transaction.part.findUniqueOrThrow({
         where: { id },
-        select: { description: true, familyId: true, priceCents: true },
+        select: { reference: true, description: true, familyId: true, costCents: true, priceCents: true },
       });
       const updated = await transaction.part.update({
         where: { id },
         data: {
+          reference: parsed.data.reference || null,
           description: parsed.data.description,
           familyId: parsed.data.familyId,
+          costCents: Math.round(parsed.data.cost * 100),
           priceCents: Math.round(parsed.data.price * 100),
         },
       });
@@ -77,8 +90,10 @@ export async function updatePart(id: string, formData: FormData) {
           changes: {
             before: previous,
             after: {
+              reference: updated.reference,
               description: updated.description,
               familyId: updated.familyId,
+              costCents: updated.costCents,
               priceCents: updated.priceCents,
             },
             addedImages: uploaded.map(({ url }) => url),
@@ -119,7 +134,9 @@ export async function deletePart(id: string) {
         summary: `Pieza eliminada: ${part.description}`,
         changes: {
           snapshot: {
+            reference: part.reference,
             description: part.description,
+            costCents: part.costCents,
             priceCents: part.priceCents,
             family: part.family,
             images: part.images,

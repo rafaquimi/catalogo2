@@ -9,6 +9,7 @@ import {
   MAX_IMAGES_PER_PART,
   validateImageFile,
 } from "@/lib/image-rules";
+import { PriceFields } from "../../PriceFields";
 
 interface ExistingImage {
   id: string;
@@ -18,7 +19,9 @@ interface ExistingImage {
 interface Props {
   part: {
     id: string;
+    reference: string | null;
     description: string;
+    costCents: number;
     priceCents: number;
     familyId: string;
     images: ExistingImage[];
@@ -118,15 +121,9 @@ export function EditarPiezaForm({ part, families }: Props) {
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500">Datos de la pieza</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2 space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Descripción</label>
-            <textarea
-              name="description"
-              required
-              rows={3}
-              defaultValue={part.description}
-              className={inputClass}
-            />
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Referencia <span className="font-normal text-slate-400">(opcional)</span></label>
+            <input name="reference" maxLength={100} defaultValue={part.reference ?? ""} className={inputClass} />
           </div>
 
           <div className="space-y-1.5">
@@ -143,16 +140,18 @@ export function EditarPiezaForm({ part, families }: Props) {
             </select>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Precio (EUR)</label>
-            <input
-              name="price"
+          <div className="sm:col-span-2 space-y-1.5">
+            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Descripción</label>
+            <textarea
+              name="description"
               required
-              inputMode="decimal"
-              defaultValue={(part.priceCents / 100).toFixed(2).replace(".", ",")}
+              rows={3}
+              defaultValue={part.description}
               className={inputClass}
             />
           </div>
+
+          <PriceFields initialCostCents={part.costCents} initialPriceCents={part.priceCents} inputClass={inputClass} />
         </div>
       </div>
 
