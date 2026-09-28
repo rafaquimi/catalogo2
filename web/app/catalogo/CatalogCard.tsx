@@ -10,13 +10,13 @@ interface Props {
   reference: string | null;
   description: string;
   family: string;
-  price: string;
-  priceLabel: string;
+  cost: string;
+  pvp: string;
   showCost: boolean;
   images: { id: string; url: string }[];
 }
 
-export function CatalogCard({ id, reference, description, family, price, priceLabel, showCost, images }: Props) {
+export function CatalogCard({ id, reference, description, family, cost, pvp, showCost, images }: Props) {
   const [current, setCurrent] = useState(0);
   const { addPart, quantities } = useQuoteDraft();
   const selectedQuantity = quantities[id] || 0;
@@ -103,9 +103,17 @@ export function CatalogCard({ id, reference, description, family, price, priceLa
         </span>
         {reference ? <div className="font-mono text-xs font-semibold text-slate-500 dark:text-slate-400">Ref. {reference}</div> : null}
         <div className="text-sm font-medium text-slate-800 dark:text-slate-100 line-clamp-2">{description}</div>
-        <div className={`mt-2 rounded-xl px-3 py-2 ${showCost ? "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300" : "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300"}`}>
-          <div className="text-[10px] font-semibold uppercase tracking-wide opacity-70">{priceLabel}</div>
-          <div className="text-base font-bold">{price}</div>
+        <div className={`mt-2 grid gap-2 ${showCost ? "grid-cols-2" : "grid-cols-1"}`}>
+          {showCost ? (
+            <div className="rounded-xl bg-amber-50 px-3 py-2 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+              <div className="text-[10px] font-semibold uppercase tracking-wide opacity-70">Coste sin IVA</div>
+              <div className="text-base font-bold">{cost}</div>
+            </div>
+          ) : null}
+          <div className="rounded-xl bg-blue-50 px-3 py-2 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
+            <div className="text-[10px] font-semibold uppercase tracking-wide opacity-70">PVP IVA incluido</div>
+            <div className="text-base font-bold">{pvp}</div>
+          </div>
         </div>
        </Link>
        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
