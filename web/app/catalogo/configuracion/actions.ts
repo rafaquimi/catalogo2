@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-guard";
 import { getAuditActor } from "@/lib/audit";
 import { getR2Bucket, getR2Client, getR2PublicUrl } from "@/lib/r2";
+import { testMicrosoftConnection as verifyMicrosoftConnection } from "@/lib/microsoft-email";
 import { encryptSecret } from "@/lib/secret-crypto";
 import { createSmtpTransport, getSmtpConfig } from "@/lib/smtp";
 
@@ -73,9 +74,38 @@ export async function testSmtpConnection():Promise<SettingsResult>{
  }catch(error){
    console.error("Error verificando SMTP",error);
    const smtpError=error as Error&{code?:string;responseCode?:number};
-   if(smtpError.code==="EAUTH"||smtpError.responseCode===535)return{ok:false,error:"Gmail ha rechazado el usuario o la contraseña. Usa una contraseña de aplicación de Google, no la contraseña normal."};
+   if(smtpError.code==="EAUTH"||smtpError.responseCode===535)return{ok:false,error:"El servidor de correo ha rechazado el usuario o la contraseña. Outlook/Hotmail debe conectarse mediante el botón de Microsoft."};
    if(smtpError.code==="ETIMEDOUT"||smtpError.code==="ESOCKET")return{ok:false,error:"El servidor SMTP no ha respondido. Comprueba el puerto y el tipo de cifrado."};
-   if(smtpError.code==="EDNS")return{ok:false,error:"No se encuentra el servidor SMTP. Comprueba el nombre smtp.gmail.com."};
-   return{ok:false,error:`No se ha podido conectar con Gmail${smtpError.code?` (${smtpError.code})`:""}.`};
+   if(smtpError.code==="EDNS")return{ok:false,error:"No se encuentra el servidor SMTP. Comprueba el nombre del servidor."};
+   return{ok:false,error:`No se ha podido conectar con el servidor de correo${smtpError.code?` (${smtpError.code})`:""}.`};
+ }
+}
+
+export async function testMicrosoftEmailConnection():Promise<SettingsResult>{
+ await requireAuth();
+ try{
+   const email=await verifyMicrosoftConnection();
+   return{ok:true,error:email};
+ }catch(error){
+   console.error("Error verificando Microsoft OAuth",error);
+   return{ok:false,error:"Microsoft no ha podido renovar la autorización. Desconecta la cuenta y vuelve a conectarla."};
+ }
+}
+
+export async function disconnectMicrosoftEmail():Promise<SettingsResult>{
+ const actor=getAuditActor(await requireAuth());
+ try{
+   const current=await prisma.microsoftEmailConnection.findUnique({where:{id:"default"}});
+   if(current){
+     await prisma.$transaction([
+       prisma.microsoftEmailConnection.delete({where:{id:"default"}}),
+       prisma.auditLog.create({data:{actorUserId:actor.userId,actorEmail:actor.email,action:"DISCONNECT",entityType:"MICROSOFT_EMAIL",entityId:"default",summary:`Cuenta Microsoft desconectada: ${current.accountEmail}`}}),
+     ]);
+   }
+   revalidatePath("/catalogo/configuracion");
+   return{ok:true};
+ }catch(error){
+   console.error("No se ha podido desconectar Microsoft",error);
+   return{ok:false,error:"No se ha podido desconectar la cuenta Microsoft."};
  }
 }

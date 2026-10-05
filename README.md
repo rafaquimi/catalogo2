@@ -88,6 +88,23 @@ R2_BUCKET_NAME=...
 R2_PUBLIC_URL=https://...        # URL pública del bucket
 ```
 
+### Envío con Hotmail u Outlook
+
+Outlook.com exige OAuth2. La aplicación permite conectar la cuenta desde
+**Configuración → Cuenta Microsoft** sin guardar su contraseña.
+
+1. Ejecuta `web/prisma/microsoft-email-oauth.sql` en Supabase SQL Editor.
+2. Registra una aplicación en Microsoft Entra que admita cuentas personales de Microsoft.
+3. Añade como URI de redirección web: `https://TU-DOMINIO/api/microsoft/callback`.
+4. Concede los permisos delegados de Microsoft Graph `User.Read` y `Mail.Send`.
+5. Crea un secreto de cliente y configura en Vercel `MICROSOFT_CLIENT_ID`,
+   `MICROSOFT_CLIENT_SECRET` y `MICROSOFT_REDIRECT_URI`.
+6. Despliega de nuevo y pulsa **Conectar con Microsoft** en la aplicación.
+
+Los tokens renovables se guardan cifrados con una clave derivada de
+`NEXTAUTH_SECRET`. SMTP continúa disponible como alternativa para otros
+proveedores.
+
 ---
 
 ## Estructura del proyecto
