@@ -121,6 +121,19 @@ model EmailSettings {
   updatedAt             DateTime @updatedAt
 }
 
+// Conexión OAuth2 con Microsoft para Outlook.com/Hotmail.
+// El refresh token se cifra antes de guardarse.
+model MicrosoftEmailConnection {
+  id                    String   @id @default("default")
+  enabled               Boolean  @default(true)
+  accountEmail          String
+  displayName           String   @default("")
+  refreshTokenEncrypted String
+  connectedAt           DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
 model Customer {
   id        String   @id @default(cuid())
   name      String

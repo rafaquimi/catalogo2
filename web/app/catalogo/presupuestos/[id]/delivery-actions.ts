@@ -5,6 +5,7 @@ import { requireAuth } from "@/lib/auth-guard";
 import { getAuditActor } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { generateQuotePdf } from "@/lib/quote-pdf";
+import { sendMicrosoftEmail } from "@/lib/microsoft-email";
 import { createSmtpTransport, getSmtpConfig } from "@/lib/smtp";
 
 function escapeHtml(value: string) {
@@ -13,22 +14,39 @@ function escapeHtml(value: string) {
 
 export async function sendQuoteEmail(id: string): Promise<{ok:boolean;error?:string}> {
   const actor = getAuditActor(await requireAuth());
-  const smtp = await getSmtpConfig();
-  if (!smtp) return { ok:false, error:"Configura el correo en Empresa y PDF antes de enviar." };
+  let microsoftEnabled = false;
+  try {
+    microsoftEnabled = Boolean((await prisma.microsoftEmailConnection.findUnique({ where:{id:"default"} }))?.enabled);
+  } catch (error) {
+    console.warn("MicrosoftEmailConnection todavía no está disponible.", error);
+  }
+  const smtp = microsoftEnabled ? null : await getSmtpConfig();
+  if (!microsoftEnabled && !smtp) return { ok:false, error:"Configura el correo en Empresa y PDF antes de enviar." };
   const quote = await prisma.quote.findUnique({ where:{id} });
   if (!quote?.customerEmail) return { ok:false, error:"Este cliente no tiene dirección de email." };
 
   try {
     const { bytes } = await generateQuotePdf(id);
-    const transporter = createSmtpTransport(smtp);
-    await transporter.sendMail({
-      from: smtp.from,
+    const message = {
       to: quote.customerEmail,
       subject: `Presupuesto ${quote.number}`,
       text: `Hola ${quote.customerName}, adjuntamos el presupuesto ${quote.number}.`,
       html: `<p>Hola <strong>${escapeHtml(quote.customerName)}</strong>,</p><p>Adjuntamos el presupuesto <strong>${escapeHtml(quote.number)}</strong>.</p><p>Gracias.</p>`,
-      attachments: [{ filename:`${quote.number}.pdf`, content:Buffer.from(bytes), contentType:"application/pdf" }],
-    });
+      attachment: { filename:`${quote.number}.pdf`, content:Buffer.from(bytes), contentType:"application/pdf" },
+    };
+    if (microsoftEnabled) {
+      await sendMicrosoftEmail(message);
+    } else if (smtp) {
+      const transporter = createSmtpTransport(smtp);
+      await transporter.sendMail({
+        from: smtp.from,
+        to: message.to,
+        subject: message.subject,
+        text: message.text,
+        html: message.html,
+        attachments: [message.attachment],
+      });
+    }
     await prisma.$transaction([
       prisma.quote.update({ where:{id}, data:{status:"SENT"} }),
       prisma.quoteDelivery.create({ data:{quoteId:id,channel:"EMAIL",recipient:quote.customerEmail,status:"SENT"} }),
